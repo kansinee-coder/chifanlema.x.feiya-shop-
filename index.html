@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chifanlema 吃饭了吗 — สั่งขนมจีน</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#c8102e; --gold:#f2b705; --cream:#fff8ec; --ink:#2b1a12; --muted:#7a6457;
+  --line:#efe1cc; --card:#ffffff; --green:#1a8a3a; --soft:#fdeee0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Prompt',system-ui,sans-serif;background:var(--cream);color:var(--ink);padding-bottom:110px}
+header{background:var(--red);color:#fff;padding:28px 16px 24px;text-align:center;position:relative;overflow:hidden}
+header::after{content:"";position:absolute;inset:auto 0 0 0;height:8px;background:repeating-linear-gradient(90deg,var(--gold) 0 14px,transparent 14px 22px)}
+header h1{font-size:26px;font-weight:700}
+header h1 span{color:var(--gold)}
+header p{opacity:.9;font-size:14px;margin-top:4px}
+.ig{display:inline-block;margin-top:10px;background:rgba(255,255,255,.15);padding:4px 12px;border-radius:99px;font-size:13px;color:#fff;text-decoration:none}
+main{max-width:640px;margin:0 auto;padding:16px}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+.tabs button{flex:none;border:1.5px solid var(--red);background:#fff;color:var(--red);padding:7px 16px;border-radius:99px;font:inherit;font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--red);color:#fff}
+.promo-banner{background:var(--gold);border-radius:14px;padding:10px 14px;font-size:14px;font-weight:500;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px;display:flex;gap:12px;align-items:stretch}
+.thumb{flex:none;width:96px;height:96px;border-radius:12px;background:var(--soft);display:grid;place-items:center;font-size:40px;overflow:hidden;cursor:zoom-in}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.info{flex:1;min-width:0;display:flex;flex-direction:column}
+.info .brand{font-size:12px;color:var(--muted)}
+.info h3{font-size:15px;font-weight:600;line-height:1.35}
+.info .cn{font-size:12px;color:var(--muted)}
+.info .unit{font-size:12px;color:var(--muted);margin-top:2px}
+.bottom{margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.price{font-weight:700;color:var(--red);font-size:17px}
+.tag{display:inline-block;background:var(--gold);color:var(--ink);font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;margin-top:4px;align-self:flex-start}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--red);background:#fff;color:var(--red);font-size:18px;line-height:1;cursor:pointer}
+.qty button.plus{background:var(--red);color:#fff}
+.qty span{min-width:20px;text-align:center;font-weight:600}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,.06);z-index:5}
+.bar .in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.bar .sum{flex:1;font-size:13px;color:var(--muted)}
+.bar .sum b{display:block;font-size:20px;color:var(--ink)}
+.btn{background:var(--red);color:#fff;border:0;border-radius:12px;padding:13px 22px;font:inherit;font-weight:600;font-size:16px;cursor:pointer}
+.btn:disabled{background:#d9c9bb;cursor:not-allowed}
+.btn.full{width:100%}
+.btn.ghost{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.sheet{position:fixed;inset:0;background:rgba(43,26,18,.45);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.sheet.open{display:flex}
+.panel{background:#fff;width:100%;max-width:640px;max-height:94vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom))}
+.steps{display:flex;gap:6px;margin-bottom:14px}
+.steps div{flex:1;text-align:center;font-size:12px;color:var(--muted);padding-bottom:6px;border-bottom:3px solid var(--line)}
+.steps div.on{color:var(--red);font-weight:600;border-color:var(--red)}
+.steps div.done{color:var(--ink);border-color:var(--gold)}
+.panel h2{font-size:19px;margin-bottom:10px}
+.line{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:4px 0}
+.line.disc{color:var(--green)}
+.line.total{border-top:1px dashed var(--line);margin-top:6px;padding-top:10px;font-weight:700;font-size:17px}
+.weight{background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14px;margin:12px 0}
+.opt{display:flex;align-items:center;gap:12px;border:2px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer}
+.opt.on{border-color:var(--red);background:#fff5f6}
+.opt input{width:20px;height:20px;accent-color:var(--red)}
+.opt .t{flex:1}
+.opt .t b{display:block;font-size:15px}
+.opt .t small{color:var(--muted);font-size:12px}
+.opt .p{font-weight:700;font-size:17px}
+.warn{background:#fff3cd;border:1px solid #f2d27a;border-radius:12px;padding:12px;font-size:14px;margin:10px 0}
+label{display:block;font-size:14px;font-weight:500;margin:12px 0 4px}
+input[type=text],input[type=tel],textarea{width:100%;font:inherit;font-size:15px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fffdf9}
+input:focus,textarea:focus{outline:none;border-color:var(--red)}
+.row2{display:flex;gap:10px}.row2>div{flex:1;min-width:0}
+.note{font-size:12px;color:var(--muted);margin-top:6px}
+.actions{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.pay{text-align:center}
+.pay .amount{font-size:30px;font-weight:700;color:var(--red);margin:4px 0 2px}
+.qrbox{position:relative;display:inline-block;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.qrbox img,.qrbox canvas{display:block;width:230px;height:230px;object-fit:contain}
+.demo{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.demo span{background:rgba(200,16,46,.9);color:#fff;font-weight:700;padding:4px 14px;border-radius:8px;transform:rotate(-12deg);font-size:15px}
+.acct{font-size:14px;color:var(--muted)}
+pre{white-space:pre-wrap;background:var(--cream);border-radius:12px;padding:12px;font:inherit;font-size:13px;text-align:left;margin:12px 0}
+.howto{text-align:left;font-size:14px;background:var(--soft);border-radius:12px;padding:12px 14px;margin-top:6px}
+.howto ol{padding-left:20px}
+.howto li{margin:3px 0}
+.zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;z-index:30;padding:20px;overflow-y:auto;text-align:center}
+.zoom.open{display:block}
+.zoom img{max-width:100%;max-height:88vh;border-radius:12px;margin:0 auto 14px;display:block}
+.zoom .x{position:fixed;top:12px;right:16px;color:#fff;font-size:28px}
+.more{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:1px 6px;border-radius:6px}
+.thumb{position:relative}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;display:none;z-index:40}
+</style>
+</head>
+<body>
+<header>
+  <h1>吃饭了吗 <span>Chifanlema</span></h1>
+  <p>ขนมนำเข้าจากจีน ของแท้ 🇨🇳</p>
+  <a class="ig" id="igLink" target="_blank" rel="noopener">📷 @Chifanlema.x.feiya</a>
+</header>
+
+<main>
+  <div class="tabs" id="tabs"></div>
+  <div id="list"></div>
+</main>
+
+<div class="bar"><div class="in">
+  <div class="sum">ค่าสินค้า<b id="barTotal">฿0</b></div>
+  <button class="btn" id="checkoutBtn" disabled>สั่งเลย →</button>
+</div></div>
+
+<div class="sheet" id="sheet"><div class="panel" id="panel"></div></div>
+<div class="zoom" id="zoom"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================
+   CONFIG — ตั้งค่าร้าน
+   ===================================================== */
+const CONFIG = {
+  igUsername: "Chifanlema.x.feiya",
+  sheetsUrl: "",                 // วาง URL Google Apps Script (ดู SETUP.md)
+  paymentQr: "",                 // ใส่ชื่อไฟล์รูป QR ธนาคาร เช่น "qr.jpg" — ถ้าว่าง จะแสดง QR ตัวอย่าง
+  accountName: "ชื่อบัญชี: (ใส่ชื่อบัญชีของร้าน)",
+};
+
+/* ค่าส่งตามน้ำหนักรวม (กรัม) — maxG = น้ำหนักสูงสุดของช่วงนั้น (รวมขอบบน) */
+const SHIPPING = [
+  { maxG: 500,  reg: 30,  ems: 50  },
+  { maxG: 750,  reg: 45,  ems: 70  },
+  { maxG: 1000, reg: 60,  ems: 90  },
+  { maxG: 1250, reg: 75,  ems: 110 },
+  { maxG: 1500, reg: 90,  ems: 130 },
+  { maxG: 1750, reg: 105, ems: 150 },
+  { maxG: 2000, reg: 120, ems: 170 },
+]; // เกิน 2000 g → ให้ติดต่อร้าน
+
+/* โปรโมชั่นแบบคละ: สินค้าที่อยู่ในกลุ่มเดียวกันนับรวมกัน */
+const PROMOS = {
+  kkbear: { qty: 3, price: 200, label: "KKBear 3 ถุง 200 คละรสได้" },
+};
+
+/* สินค้า (จาก products_info.xlsx) */
+const PRODUCTS = [
+  { code:"MAT01", cat:"มัทฉะ", brand:"和风宇治", cn:"五十铃抹茶粉", th:"มัทฉะ 五十铃",
+    weight:250, price:169, unit:"1 ถุง", img:"product pics/Matcha01.jpg", more:["product pics/Matcha01-2.jpg"], emoji:"🍵" },
+  { code:"SNA01", cat:"ถั่ว & ผลไม้แห้ง", brand:"百草味", cn:"桂花味板栗", th:"เกาลัด รสดอกกุ้ยฮวา",
+    weight:300, price:69, unit:"แพ็ก 4 ถุง", img:"product pics/SNA01-01.jpg", emoji:"🌰" },
+  { code:"SNA07", cat:"ถั่ว & ผลไม้แห้ง", brand:"仟果滋", cn:"腰果奶芙枣", th:"พุทรานมชีสเม็ดมะม่วงหิมพานต์",
+    weight:400, price:169, unit:"1 ถุง (250 g)", img:"product pics/SNA07-01.jpg", emoji:"🫘" },
+  { code:"SNA08", cat:"ถั่ว & ผลไม้แห้ง", brand:"仟果滋", cn:"红枣来核桃", th:"พุทราสอดไส้วอลนัท",
+    weight:400, price:169, unit:"1 ถุง (250 g)", img:"product pics/SNA08-01.jpg", emoji:"🫘" },
+  { code:"SNA07+SNA08", cat:"ถั่ว & ผลไม้แห้ง", brand:"仟果滋", cn:"腰果奶芙枣+红枣来核桃", th:"พุทรามิกซ์ 2 รส (นมชีสมะม่วงหิมพานต์ + สอดไส้วอลนัท)",
+    weight:400, price:169, unit:"1 ถุง (250 g)", img:"product pics/SNA07-SNA08.jpg", emoji:"🫘" },
+  { code:"SNA15", cat:"ถั่ว & ผลไม้แห้ง", brand:"溜溜梅", cn:"梅和菓子", th:"บ๊วยยัดไส้ผลไม้แห้ง",
+    weight:250, price:99, unit:"1 ถุง", img:"product pics/SNA15-01.jpg", emoji:"🍑" },
+  { code:"SNA16", cat:"บิสกิต", brand:"KKBear", cn:"原味花生蒲夹心饼干", th:"บิสกิตสอดไส้เนยถั่ว",
+    weight:250, price:69, unit:"1 ถุง", img:"product pics/SNA16.jpg", emoji:"🍪", promo:"kkbear" },
+  { code:"SNA17", cat:"บิสกิต", brand:"KKBear", cn:"可可花生蒲夹心饼干", th:"บิสกิตแป้งช็อกโกแลตสอดไส้เนยถั่ว",
+    weight:250, price:69, unit:"1 ถุง", img:"product pics/SNA17.jpg", emoji:"🍪", promo:"kkbear" },
+  { code:"SNA18", cat:"บิสกิต", brand:"KKBear", cn:"芝士咸柠檬花生蒲夹心饼干", th:"บิสกิตสอดไส้ครีมชีสเลม่อน",
+    weight:250, price:69, unit:"1 ถุง", img:"product pics/SNA18.jpg", emoji:"🍪", promo:"kkbear" },
+];
+/* ===================================================== */
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const baht = n => "฿" + n.toLocaleString("th-TH");
+const cart = {};            // code -> qty
+let activeCat = "ทั้งหมด";
+let order = {};             // checkout state
+$("#igLink").href = "https://instagram.com/" + CONFIG.igUsername;
+
+/* ---------- คำนวณ ---------- */
+function cartLines(){
+  return PRODUCTS.filter(p => cart[p.code]).map(p => ({ p, qty: cart[p.code], sub: cart[p.code]*p.price }));
+}
+function itemsFull(){ return cartLines().reduce((a,l)=>a+l.sub,0); }
+function discount(){
+  let d = 0;
+  for (const [key, pr] of Object.entries(PROMOS)){
+    const lines = cartLines().filter(l => l.p.promo === key);
+    const n = lines.reduce((a,l)=>a+l.qty,0);
+    if (n >= pr.qty){
+      const unitPrice = lines[0].p.price;
+      const sets = Math.floor(n / pr.qty);
+      d += sets * (pr.qty*unitPrice - pr.price);
+    }
+  }
+  return d;
+}
+function itemsTotal(){ return itemsFull() - discount(); }
+function itemsCount(){ return Object.values(cart).reduce((a,b)=>a+b,0); }
+function totalWeight(){ return cartLines().reduce((a,l)=>a+l.qty*l.p.weight,0); }
+function shippingTier(w){ return SHIPPING.find(t => w <= t.maxG) || null; }
+
+/* ---------- หน้าร้าน ---------- */
+function renderTabs(){
+  const cats = ["ทั้งหมด", ...new Set(PRODUCTS.map(p=>p.cat))];
+  $("#tabs").innerHTML = cats.map(c=>`<button class="${c===activeCat?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{activeCat=b.dataset.c;renderTabs();renderList();});
+}
+function thumb(p){
+  const fallback = `<span>${p.emoji}</span>`;
+  return p.img
+    ? `<div class="thumb" data-code="${p.code}"><img src="${esc(encodeURI(p.img))}" alt="${esc(p.th)}" loading="lazy" onerror="this.parentNode.removeAttribute('data-code');this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${p.emoji}'}))">${p.more&&p.more.length?`<span class="more">+${p.more.length}</span>`:""}</div>`
+    : `<div class="thumb">${fallback}</div>`;
+}
+function renderList(){
+  const items = PRODUCTS.filter(p=>activeCat==="ทั้งหมด"||p.cat===activeCat);
+  const showPromo = items.some(p=>p.promo);
+  $("#list").innerHTML =
+    (showPromo ? Object.values(PROMOS).map(pr=>`<div class="promo-banner">🔥 โปร: ${esc(pr.label)}</div>`).join("") : "") +
+    items.map(p=>{
+      const q = cart[p.code]||0;
+      return `<div class="card">
+        ${thumb(p)}
+        <div class="info">
+          <div class="brand">${esc(p.brand)}</div>
+          <h3>${esc(p.th)}</h3>
+          <div class="cn">${esc(p.cn)}</div>
+          <div class="unit">${esc(p.unit)}</div>
+          ${p.promo?`<span class="tag">${PROMOS[p.promo].qty} ถุง ${baht(PROMOS[p.promo].price)} คละรสได้</span>`:""}
+          <div class="bottom">
+            <span class="price">${baht(p.price)}</span>
+            <div class="qty">
+              ${q?`<button data-k="${p.code}" data-d="-1" aria-label="ลด">−</button><span>${q}</span>`:""}
+              <button class="plus" data-k="${p.code}" data-d="1" aria-label="เพิ่ม">+</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  $("#list").querySelectorAll(".qty button").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k, n=(cart[k]||0)+Number(b.dataset.d);
+    if(n<=0) delete cart[k]; else cart[k]=n;
+    renderList(); renderBar();
+  });
+  $("#list").querySelectorAll(".thumb[data-code]").forEach(t=>t.onclick=()=>{
+    const p = PRODUCTS.find(x=>x.code===t.dataset.code);
+    $("#zoom").innerHTML = `<span class="x">✕</span>` + [p.img, ...(p.more||[])].map(s=>`<img src="${esc(encodeURI(s))}" alt="${esc(p.th)}">`).join("");
+    $("#zoom").classList.add("open");
+  });
+}
+function renderBar(){
+  $("#barTotal").textContent = baht(itemsTotal());
+  const n = itemsCount();
+  $("#checkoutBtn").disabled = n===0;
+  $("#checkoutBtn").textContent = n ? `สั่งเลย (${n}) →` : "สั่งเลย →";
+}
+
+/* ---------- Checkout ---------- */
+function stepsBar(i){
+  const names=["1 ค่าส่ง","2 ที่อยู่","3 ชำระเงิน"];
+  return `<div class="steps">${names.map((n,k)=>`<div class="${k===i?'on':k<i?'done':''}">${n}</div>`).join("")}</div>`;
+}
+function itemsSummaryHtml(){
+  const d = discount();
+  return cartLines().map(l=>`<div class="line"><span>${esc(l.p.th)} × ${l.qty}</span><span>${baht(l.sub)}</span></div>`).join("")
+    + (d?`<div class="line disc"><span>ส่วนลดโปร KKBear</span><span>−${baht(d)}</span></div>`:"")
+    + `<div class="line" style="font-weight:600"><span>รวมค่าสินค้า</span><span>${baht(itemsTotal())}</span></div>`;
+}
+
+function step1(){
+  const w = totalWeight(), tier = shippingTier(w);
+  if(!order.method) order.method = "reg";
+  let body;
+  if(!tier){
+    body = `<div class="warn">📦 น้ำหนักรวมเกิน 2 กก. ค่าส่งต้องคำนวณพิเศษ<br>กรุณาทักร้านทาง IG เพื่อสอบถามค่าส่งค่ะ</div>
+      <div class="actions">
+        <button class="btn full" id="askBtn">📩 ทักร้านทาง IG</button>
+        <button class="btn ghost full" id="backBtn">← กลับไปแก้ตะกร้า</button>
+      </div>`;
+  } else {
+    body = `<h2 style="font-size:16px;margin-top:4px">เลือกวิธีจัดส่ง</h2>
+      ${[["reg","ลงทะเบียน","ประหยัด · ประมาณ 3–5 วัน"],["ems","EMS","ด่วน · ประมาณ 1–2 วัน"]].map(([k,n,s])=>`
+        <label class="opt ${order.method===k?'on':''}">
+          <input type="radio" name="m" value="${k}" ${order.method===k?'checked':''}>
+          <span class="t"><b>${n}</b><small>${s}</small></span>
+          <span class="p">${baht(tier[k])}</span>
+        </label>`).join("")}
+      <div class="line total"><span>รวมทั้งหมด</span><span id="grand"></span></div>
+      <div class="actions">
+        <button class="btn full" id="nextBtn">ถัดไป: กรอกที่อยู่ →</button>
+        <button class="btn ghost full" id="backBtn">← กลับไปเลือกสินค้าเพิ่ม</button>
+      </div>`;
+  }
+  $("#panel").innerHTML = stepsBar(0) + `<h2>🧾 สรุปตะกร้า</h2>` + itemsSummaryHtml()
+    + `<div class="weight">⚖️ น้ำหนักรวมโดยประมาณ <b>${w.toLocaleString()} g</b>${tier?` · อยู่ในช่วงไม่เกิน ${tier.maxG.toLocaleString()} g`:""}</div>` + body;
+
+  $("#backBtn").onclick = closeSheet;
+  if(!tier){
+    $("#askBtn").onclick = ()=>{
+      const msg = "สวัสดีค่ะ อยากสั่ง:\n" + cartLines().map(l=>`• ${l.p.th} × ${l.qty}`).join("\n") + `\nน้ำหนักรวม ~${w} g รบกวนแจ้งค่าส่งค่ะ`;
+      copy(msg); toast("คัดลอกรายการแล้ว ✓ ไปวางในแชทได้เลย");
+      setTimeout(()=>location.href="https://ig.me/m/"+CONFIG.igUsername,700);
+    };
+    return;
+  }
+  const upd = ()=>{
+    order.ship = tier[order.method];
+    $("#grand").textContent = baht(itemsTotal() + order.ship);
+    $("#panel").querySelectorAll(".opt").forEach(o=>o.classList.toggle("on", o.querySelector("input").checked));
+  };
+  $("#panel").querySelectorAll("input[name=m]").forEach(r=>r.onchange=()=>{order.method=r.value;upd();});
+  upd();
+  $("#nextBtn").onclick = step2;
+}
+
+function step2(){
+  const c = order.customer || {};
+  $("#panel").innerHTML = stepsBar(1) + `<h2>📦 ข้อมูลจัดส่ง</h2>
+    <form id="f">
+      <label>ชื่อ-นามสกุลผู้รับ *</label><input type="text" name="name" required value="${esc(c.name||"")}">
+      <div class="row2">
+        <div><label>เบอร์โทร *</label><input type="tel" name="phone" required pattern="[0-9\\-\\s]{9,12}" value="${esc(c.phone||"")}"></div>
+        <div><label>IG ของคุณ</label><input type="text" name="ig" placeholder="@username" value="${esc(c.ig||"")}"></div>
+      </div>
+      <label>ที่อยู่จัดส่ง *</label><textarea name="address" rows="3" required placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์">${esc(c.address||"")}</textarea>
+      <label>หมายเหตุ</label><input type="text" name="note" placeholder="เช่น ฝากไว้ที่ป้อมยาม" value="${esc(c.note||"")}">
+      <div class="line total"><span>ยอดชำระ (${order.method==="ems"?"EMS":"ลงทะเบียน"})</span><span>${baht(itemsTotal()+order.ship)}</span></div>
+      <div class="actions">
+        <button class="btn full" type="submit">ไปหน้าชำระเงิน →</button>
+        <button class="btn ghost full" type="button" id="backBtn">← กลับ</button>
+      </div>
+    </form>`;
+  $("#backBtn").onclick = ()=>{ order.customer = Object.fromEntries(new FormData($("#f"))); step1(); };
+  $("#f").onsubmit = e=>{ e.preventDefault(); order.customer = Object.fromEntries(new FormData(e.target)); step3(); };
+}
+
+function step3(){
+  const c = order.customer;
+  if(!order.id) order.id = "CF" + new Date().toISOString().slice(2,10).replace(/-/g,"") + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
+  const total = itemsTotal() + order.ship;
+  const methodName = order.method==="ems" ? "EMS" : "ลงทะเบียน";
+  const d = discount();
+  const summary =
+`🛒 ออเดอร์ ${order.id}
+${cartLines().map(l=>`• ${l.p.code} ${l.p.th} × ${l.qty}`).join("\n")}${d?`\nส่วนลดโปร: −${baht(d)}`:""}
+ค่าส่ง ${methodName}: ${baht(order.ship)} (~${totalWeight()} g)
+💰 ยอดโอน ${baht(total)}
+
+👤 ${c.name} | ${c.phone}${c.ig?" | "+c.ig:""}
+📦 ${c.address}${c.note?"\n📝 "+c.note:""}`;
+
+  $("#panel").innerHTML = stepsBar(2) + `<div class="pay">
+    <h2>💳 สแกนจ่ายเงิน</h2>
+    <div class="acct">ยอดที่ต้องโอน</div>
+    <div class="amount">${baht(total)}</div>
+    <div class="qrbox" id="qrbox"></div>
+    <div class="acct">${esc(CONFIG.accountName)}</div>
+    <div class="howto"><b>ขั้นตอนหลังโอน</b><ol>
+      <li>โอนเงินตามยอดด้านบน แล้วเซฟสลิปไว้</li>
+      <li>กดปุ่ม <b>“คัดลอกออเดอร์ & ส่งทาง IG”</b></li>
+      <li>วางข้อความในแชท พร้อมแนบสลิป ร้านจะยืนยันและแจ้งเลขพัสดุค่ะ</li>
+    </ol></div>
+    <pre>${esc(summary)}</pre>
+    <div class="actions">
+      <button class="btn full" id="dmBtn">📩 คัดลอกออเดอร์ & ส่งทาง IG</button>
+      <button class="btn ghost full" id="backBtn">← แก้ไขข้อมูล</button>
+    </div></div>`;
+  renderQr(total);
+  $("#backBtn").onclick = step2;
+  $("#dmBtn").onclick = ()=>{
+    copy(summary); toast("คัดลอกแล้ว ✓ ไปวางในแชท + แนบสลิปได้เลย");
+    if(!order.sent){ sendToSheets(summary, total, methodName); order.sent = true; }
+    setTimeout(()=>location.href="https://ig.me/m/"+CONFIG.igUsername,800);
+  };
+}
+
+const DEMO_QR = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnPz4KPHN2ZyB3aWR0aD0iMzVtbSIgaGVpZ2h0PSIzNW1tIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAzNSAzNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMSwxSDJWMkgxek0yLDFIM1YySDJ6TTMsMUg0VjJIM3pNNCwxSDVWMkg0ek01LDFINlYySDV6TTYsMUg3VjJINnpNNywxSDhWMkg3ek0xMCwxSDExVjJIMTB6TTEyLDFIMTNWMkgxMnpNMTQsMUgxNVYySDE0ek0xNiwxSDE3VjJIMTZ6TTE4LDFIMTlWMkgxOHpNMTksMUgyMFYySDE5ek0yMiwxSDIzVjJIMjJ6TTIzLDFIMjRWMkgyM3pNMjcsMUgyOFYySDI3ek0yOCwxSDI5VjJIMjh6TTI5LDFIMzBWMkgyOXpNMzAsMUgzMVYySDMwek0zMSwxSDMyVjJIMzF6TTMyLDFIMzNWMkgzMnpNMzMsMUgzNFYySDMzek0xLDJIMlYzSDF6TTcsMkg4VjNIN3pNOSwySDEwVjNIOXpNMTIsMkgxM1YzSDEyek0xMywySDE0VjNIMTN6TTE3LDJIMThWM0gxN3pNMTksMkgyMFYzSDE5ek0yMSwySDIyVjNIMjF6TTI3LDJIMjhWM0gyN3pNMzMsMkgzNFYzSDMzek0xLDNIMlY0SDF6TTMsM0g0VjRIM3pNNCwzSDVWNEg0ek01LDNINlY0SDV6TTcsM0g4VjRIN3pNOSwzSDEwVjRIOXpNMTAsM0gxMVY0SDEwek0xMSwzSDEyVjRIMTF6TTEzLDNIMTRWNEgxM3pNMTUsM0gxNlY0SDE1ek0xNiwzSDE3VjRIMTZ6TTIxLDNIMjJWNEgyMXpNMjIsM0gyM1Y0SDIyek0yMywzSDI0VjRIMjN6TTI0LDNIMjVWNEgyNHpNMjUsM0gyNlY0SDI1ek0yNywzSDI4VjRIMjd6TTI5LDNIMzBWNEgyOXpNMzAsM0gzMVY0SDMwek0zMSwzSDMyVjRIMzF6TTMzLDNIMzRWNEgzM3pNMSw0SDJWNUgxek0zLDRINFY1SDN6TTQsNEg1VjVINHpNNSw0SDZWNUg1ek03LDRIOFY1SDd6TTksNEgxMFY1SDl6TTEyLDRIMTNWNUgxMnpNMTMsNEgxNFY1SDEzek0xNSw0SDE2VjVIMTV6TTE3LDRIMThWNUgxN3pNMTksNEgyMFY1SDE5ek0yMCw0SDIxVjVIMjB6TTIxLDRIMjJWNUgyMXpNMjMsNEgyNFY1SDIzek0yNSw0SDI2VjVIMjV6TTI3LDRIMjhWNUgyN3pNMjksNEgzMFY1SDI5ek0zMCw0SDMxVjVIMzB6TTMxLDRIMzJWNUgzMXpNMzMsNEgzNFY1SDMzek0xLDVIMlY2SDF6TTMsNUg0VjZIM3pNNCw1SDVWNkg0ek01LDVINlY2SDV6TTcsNUg4VjZIN3pNMTAsNUgxMVY2SDEwek0xMyw1SDE0VjZIMTN6TTE1LDVIMTZWNkgxNXpNMTYsNUgxN1Y2SDE2ek0xNyw1SDE4VjZIMTd6TTIxLDVIMjJWNkgyMXpNMjMsNUgyNFY2SDIzek0yNyw1SDI4VjZIMjd6TTI5LDVIMzBWNkgyOXpNMzAsNUgzMVY2SDMwek0zMSw1SDMyVjZIMzF6TTMzLDVIMzRWNkgzM3pNMSw2SDJWN0gxek03LDZIOFY3SDd6TTEwLDZIMTFWN0gxMHpNMTIsNkgxM1Y3SDEyek0xNCw2SDE1VjdIMTR6TTE2LDZIMTdWN0gxNnpNMTksNkgyMFY3SDE5ek0yMCw2SDIxVjdIMjB6TTI0LDZIMjVWN0gyNHpNMjUsNkgyNlY3SDI1ek0yNyw2SDI4VjdIMjd6TTMzLDZIMzRWN0gzM3pNMSw3SDJWOEgxek0yLDdIM1Y4SDJ6TTMsN0g0VjhIM3pNNCw3SDVWOEg0ek01LDdINlY4SDV6TTYsN0g3VjhINnpNNyw3SDhWOEg3ek05LDdIMTBWOEg5ek0xMSw3SDEyVjhIMTF6TTEzLDdIMTRWOEgxM3pNMTUsN0gxNlY4SDE1ek0xNyw3SDE4VjhIMTd6TTE5LDdIMjBWOEgxOXpNMjEsN0gyMlY4SDIxek0yMyw3SDI0VjhIMjN6TTI1LDdIMjZWOEgyNXpNMjcsN0gyOFY4SDI3ek0yOCw3SDI5VjhIMjh6TTI5LDdIMzBWOEgyOXpNMzAsN0gzMVY4SDMwek0zMSw3SDMyVjhIMzF6TTMyLDdIMzNWOEgzMnpNMzMsN0gzNFY4SDMzek05LDhIMTBWOUg5ek0xMSw4SDEyVjlIMTF6TTE2LDhIMTdWOUgxNnpNMTcsOEgxOFY5SDE3ek0yMCw4SDIxVjlIMjB6TTIxLDhIMjJWOUgyMXpNMjQsOEgyNVY5SDI0ek0xLDlIMlYxMEgxek03LDlIOFYxMEg3ek05LDlIMTBWMTBIOXpNMTAsOUgxMVYxMEgxMHpNMTEsOUgxMlYxMEgxMXpNMTMsOUgxNFYxMEgxM3pNMTQsOUgxNVYxMEgxNHpNMTcsOUgxOFYxMEgxN3pNMTgsOUgxOVYxMEgxOHpNMTksOUgyMFYxMEgxOXpNMjAsOUgyMVYxMEgyMHpNMjMsOUgyNFYxMEgyM3pNMjQsOUgyNVYxMEgyNHpNMjUsOUgyNlYxMEgyNXpNMjYsOUgyN1YxMEgyNnpNMjcsOUgyOFYxMEgyN3pNMzAsOUgzMVYxMEgzMHpNMzEsOUgzMlYxMEgzMXpNMzIsOUgzM1YxMEgzMnpNMSwxMEgyVjExSDF6TTIsMTBIM1YxMUgyek0zLDEwSDRWMTFIM3pNNCwxMEg1VjExSDR6TTYsMTBIN1YxMUg2ek04LDEwSDlWMTFIOHpNMTAsMTBIMTFWMTFIMTB6TTExLDEwSDEyVjExSDExek0xNCwxMEgxNVYxMUgxNHpNMTUsMTBIMTZWMTFIMTV6TTE4LDEwSDE5VjExSDE4ek0xOSwxMEgyMFYxMUgxOXpNMjAsMTBIMjFWMTFIMjB6TTIyLDEwSDIzVjExSDIyek0yMywxMEgyNFYxMUgyM3pNMjcsMTBIMjhWMTFIMjd6TTI4LDEwSDI5VjExSDI4ek0yOSwxMEgzMFYxMUgyOXpNMzAsMTBIMzFWMTFIMzB6TTMxLDEwSDMyVjExSDMxek0xLDExSDJWMTJIMXpNMiwxMUgzVjEySDJ6TTMsMTFINFYxMkgzek00LDExSDVWMTJINHpNNSwxMUg2VjEySDV6TTYsMTFIN1YxMkg2ek03LDExSDhWMTJIN3pNOCwxMUg5VjEySDh6TTksMTFIMTBWMTJIOXpNMTEsMTFIMTJWMTJIMTF6TTEzLDExSDE0VjEySDEzek0xNCwxMUgxNVYxMkgxNHpNMTUsMTFIMTZWMTJIMTV6TTE2LDExSDE3VjEySDE2ek0xOCwxMUgxOVYxMkgxOHpNMjEsMTFIMjJWMTJIMjF6TTIzLDExSDI0VjEySDIzek0yNSwxMUgyNlYxMkgyNXpNMjYsMTFIMjdWMTJIMjZ6TTI4LDExSDI5VjEySDI4ek0yOSwxMUgzMFYxMkgyOXpNMzAsMTFIMzFWMTJIMzB6TTMxLDExSDMyVjEySDMxek0zMiwxMUgzM1YxMkgzMnpNMSwxMkgyVjEzSDF6TTMsMTJINFYxM0gzek02LDEySDdWMTNINnpNOCwxMkg5VjEzSDh6TTEwLDEySDExVjEzSDEwek0xMywxMkgxNFYxM0gxM3pNMTQsMTJIMTVWMTNIMTR6TTE4LDEySDE5VjEzSDE4ek0xOSwxMkgyMFYxM0gxOXpNMjEsMTJIMjJWMTNIMjF6TTIyLDEySDIzVjEzSDIyek0yNSwxMkgyNlYxM0gyNXpNMjgsMTJIMjlWMTNIMjh6TTI5LDEySDMwVjEzSDI5ek0zMCwxMkgzMVYxM0gzMHpNMzEsMTJIMzJWMTNIMzF6TTEsMTNIMlYxNEgxek0zLDEzSDRWMTRIM3pNNiwxM0g3VjE0SDZ6TTcsMTNIOFYxNEg3ek05LDEzSDEwVjE0SDl6TTEwLDEzSDExVjE0SDEwek0xMSwxM0gxMlYxNEgxMXpNMTMsMTNIMTRWMTRIMTN6TTE0LDEzSDE1VjE0SDE0ek0xNiwxM0gxN1YxNEgxNnpNMTgsMTNIMTlWMTRIMTh6TTIwLDEzSDIxVjE0SDIwek0yMiwxM0gyM1YxNEgyMnpNMjQsMTNIMjVWMTRIMjR6TTI1LDEzSDI2VjE0SDI1ek0yNiwxM0gyN1YxNEgyNnpNMjcsMTNIMjhWMTRIMjd6TTMwLDEzSDMxVjE0SDMwek0zMSwxM0gzMlYxNEgzMXpNMzIsMTNIMzNWMTRIMzJ6TTMzLDEzSDM0VjE0SDMzek0xLDE0SDJWMTVIMXpNNSwxNEg2VjE1SDV6TTYsMTRIN1YxNUg2ek0xMCwxNEgxMVYxNUgxMHpNMTIsMTRIMTNWMTVIMTJ6TTEzLDE0SDE0VjE1SDEzek0xNCwxNEgxNVYxNUgxNHpNMTksMTRIMjBWMTVIMTl6TTIyLDE0SDIzVjE1SDIyek0yNSwxNEgyNlYxNUgyNXpNMjcsMTRIMjhWMTVIMjd6TTI4LDE0SDI5VjE1SDI4ek0zMCwxNEgzMVYxNUgzMHpNMzEsMTRIMzJWMTVIMzF6TTEsMTVIMlYxNkgxek01LDE1SDZWMTZINXpNNiwxNUg3VjE2SDZ6TTcsMTVIOFYxNkg3ek04LDE1SDlWMTZIOHpNOSwxNUgxMFYxNkg5ek0xMCwxNUgxMVYxNkgxMHpNMTQsMTVIMTVWMTZIMTR6TTE2LDE1SDE3VjE2SDE2ek0xNywxNUgxOFYxNkgxN3pNMTksMTVIMjBWMTZIMTl6TTIxLDE1SDIyVjE2SDIxek0yMiwxNUgyM1YxNkgyMnpNMjYsMTVIMjdWMTZIMjZ6TTI3LDE1SDI4VjE2SDI3ek0yOSwxNUgzMFYxNkgyOXpNMzEsMTVIMzJWMTZIMzF6TTMyLDE1SDMzVjE2SDMyek0yLDE2SDNWMTdIMnpNNCwxNkg1VjE3SDR6TTUsMTZINlYxN0g1ek02LDE2SDdWMTdINnpNOCwxNkg5VjE3SDh6TTksMTZIMTBWMTdIOXpNMTAsMTZIMTFWMTdIMTB6TTEyLDE2SDEzVjE3SDEyek0xMywxNkgxNFYxN0gxM3pNMTQsMTZIMTVWMTdIMTR6TTE1LDE2SDE2VjE3SDE1ek0xNywxNkgxOFYxN0gxN3pNMTksMTZIMjBWMTdIMTl6TTIxLDE2SDIyVjE3SDIxek0yNSwxNkgyNlYxN0gyNXpNMjcsMTZIMjhWMTdIMjd6TTI4LDE2SDI5VjE3SDI4ek0zMCwxNkgzMVYxN0gzMHpNMzEsMTZIMzJWMTdIMzF6TTMzLDE2SDM0VjE3SDMzek01LDE3SDZWMThINXpNNywxN0g4VjE4SDd6TTksMTdIMTBWMThIOXpNMTAsMTdIMTFWMThIMTB6TTExLDE3SDEyVjE4SDExek0xMywxN0gxNFYxOEgxM3pNMTUsMTdIMTZWMThIMTV6TTE2LDE3SDE3VjE4SDE2ek0xOCwxN0gxOVYxOEgxOHpNMjMsMTdIMjRWMThIMjN6TTI0LDE3SDI1VjE4SDI0ek0yNSwxN0gyNlYxOEgyNXpNMjYsMTdIMjdWMThIMjZ6TTI4LDE3SDI5VjE4SDI4ek0zMiwxN0gzM1YxOEgzMnpNMiwxOEgzVjE5SDJ6TTgsMThIOVYxOUg4ek05LDE4SDEwVjE5SDl6TTEwLDE4SDExVjE5SDEwek0xMSwxOEgxMlYxOUgxMXpNMTMsMThIMTRWMTlIMTN6TTE0LDE4SDE1VjE5SDE0ek0xNSwxOEgxNlYxOUgxNXpNMTYsMThIMTdWMTlIMTZ6TTIwLDE4SDIxVjE5SDIwek0yMSwxOEgyMlYxOUgyMXpNMjQsMThIMjVWMTlIMjR6TTI1LDE4SDI2VjE5SDI1ek0yNiwxOEgyN1YxOUgyNnpNMjgsMThIMjlWMTlIMjh6TTMwLDE4SDMxVjE5SDMwek0zMywxOEgzNFYxOUgzM3pNMiwxOUgzVjIwSDJ6TTUsMTlINlYyMEg1ek03LDE5SDhWMjBIN3pNOCwxOUg5VjIwSDh6TTksMTlIMTBWMjBIOXpNMTAsMTlIMTFWMjBIMTB6TTExLDE5SDEyVjIwSDExek0xNSwxOUgxNlYyMEgxNXpNMTYsMTlIMTdWMjBIMTZ6TTE3LDE5SDE4VjIwSDE3ek0xOCwxOUgxOVYyMEgxOHpNMTksMTlIMjBWMjBIMTl6TTIwLDE5SDIxVjIwSDIwek0yMSwxOUgyMlYyMEgyMXpNMjIsMTlIMjNWMjBIMjJ6TTIzLDE5SDI0VjIwSDIzek0yNCwxOUgyNVYyMEgyNHpNMjYsMTlIMjdWMjBIMjZ6TTI3LDE5SDI4VjIwSDI3ek0zMSwxOUgzMlYyMEgzMXpNMzIsMTlIMzNWMjBIMzJ6TTMzLDE5SDM0VjIwSDMzek0zLDIwSDRWMjFIM3pNNCwyMEg1VjIxSDR6TTYsMjBIN1YyMUg2ek0xMCwyMEgxMVYyMUgxMHpNMTIsMjBIMTNWMjFIMTJ6TTE0LDIwSDE1VjIxSDE0ek0xNSwyMEgxNlYyMUgxNXpNMTcsMjBIMThWMjFIMTd6TTIxLDIwSDIyVjIxSDIxek0yMywyMEgyNFYyMUgyM3pNMjgsMjBIMjlWMjFIMjh6TTI5LDIwSDMwVjIxSDI5ek0zMCwyMEgzMVYyMUgzMHpNMzEsMjBIMzJWMjFIMzF6TTMyLDIwSDMzVjIxSDMyek0yLDIxSDNWMjJIMnpNNywyMUg4VjIySDd6TTgsMjFIOVYyMkg4ek05LDIxSDEwVjIySDl6TTEwLDIxSDExVjIySDEwek0xMSwyMUgxMlYyMkgxMXpNMTMsMjFIMTRWMjJIMTN6TTE1LDIxSDE2VjIySDE1ek0xNiwyMUgxN1YyMkgxNnpNMTksMjFIMjBWMjJIMTl6TTIwLDIxSDIxVjIySDIwek0yMiwyMUgyM1YyMkgyMnpNMjQsMjFIMjVWMjJIMjR6TTI2LDIxSDI3VjIySDI2ek0yOCwyMUgyOVYyMkgyOHpNMjksMjFIMzBWMjJIMjl6TTMxLDIxSDMyVjIySDMxek0zMiwyMUgzM1YyMkgzMnpNMzMsMjFIMzRWMjJIMzN6TTEsMjJIMlYyM0gxek0zLDIySDRWMjNIM3pNNCwyMkg1VjIzSDR6TTUsMjJINlYyM0g1ek02LDIySDdWMjNINnpNOSwyMkgxMFYyM0g5ek0xMCwyMkgxMVYyM0gxMHpNMTEsMjJIMTJWMjNIMTF6TTEyLDIySDEzVjIzSDEyek0xMywyMkgxNFYyM0gxM3pNMTQsMjJIMTVWMjNIMTR6TTE1LDIySDE2VjIzSDE1ek0yNCwyMkgyNVYyM0gyNHpNMjYsMjJIMjdWMjNIMjZ6TTI4LDIySDI5VjIzSDI4ek0yOSwyMkgzMFYyM0gyOXpNMzAsMjJIMzFWMjNIMzB6TTMzLDIySDM0VjIzSDMzek0xLDIzSDJWMjRIMXpNMywyM0g0VjI0SDN6TTQsMjNINVYyNEg0ek01LDIzSDZWMjRINXpNNywyM0g4VjI0SDd6TTEwLDIzSDExVjI0SDEwek0xMiwyM0gxM1YyNEgxMnpNMTMsMjNIMTRWMjRIMTN6TTE1LDIzSDE2VjI0SDE1ek0yMCwyM0gyMVYyNEgyMHpNMjMsMjNIMjRWMjRIMjN6TTI3LDIzSDI4VjI0SDI3ek0yOCwyM0gyOVYyNEgyOHpNMjksMjNIMzBWMjRIMjl6TTMwLDIzSDMxVjI0SDMwek0zMiwyM0gzM1YyNEgzMnpNMSwyNEgyVjI1SDF6TTQsMjRINVYyNUg0ek01LDI0SDZWMjVINXpNNiwyNEg3VjI1SDZ6TTgsMjRIOVYyNUg4ek0xMCwyNEgxMVYyNUgxMHpNMTIsMjRIMTNWMjVIMTJ6TTEzLDI0SDE0VjI1SDEzek0xNiwyNEgxN1YyNUgxNnpNMTcsMjRIMThWMjVIMTd6TTE5LDI0SDIwVjI1SDE5ek0yMCwyNEgyMVYyNUgyMHpNMjEsMjRIMjJWMjVIMjF6TTI1LDI0SDI2VjI1SDI1ek0yNiwyNEgyN1YyNUgyNnpNMjgsMjRIMjlWMjVIMjh6TTI5LDI0SDMwVjI1SDI5ek0zMSwyNEgzMlYyNUgzMXpNMzIsMjRIMzNWMjVIMzJ6TTMzLDI0SDM0VjI1SDMzek0xLDI1SDJWMjZIMXpNMiwyNUgzVjI2SDJ6TTMsMjVINFYyNkgzek01LDI1SDZWMjZINXpNNywyNUg4VjI2SDd6TTgsMjVIOVYyNkg4ek0xMSwyNUgxMlYyNkgxMXpNMTIsMjVIMTNWMjZIMTJ6TTE0LDI1SDE1VjI2SDE0ek0xNSwyNUgxNlYyNkgxNXpNMjEsMjVIMjJWMjZIMjF6TTI0LDI1SDI1VjI2SDI0ek0yNSwyNUgyNlYyNkgyNXpNMjYsMjVIMjdWMjZIMjZ6TTI3LDI1SDI4VjI2SDI3ek0yOCwyNUgyOVYyNkgyOHpNMjksMjVIMzBWMjZIMjl6TTMwLDI1SDMxVjI2SDMwek0zMiwyNUgzM1YyNkgzMnpNOSwyNkgxMFYyN0g5ek0xMSwyNkgxMlYyN0gxMXpNMTMsMjZIMTRWMjdIMTN6TTE1LDI2SDE2VjI3SDE1ek0xNiwyNkgxN1YyN0gxNnpNMTcsMjZIMThWMjdIMTd6TTE4LDI2SDE5VjI3SDE4ek0xOSwyNkgyMFYyN0gxOXpNMjAsMjZIMjFWMjdIMjB6TTIxLDI2SDIyVjI3SDIxek0yMiwyNkgyM1YyN0gyMnpNMjUsMjZIMjZWMjdIMjV6TTI5LDI2SDMwVjI3SDI5ek0zMCwyNkgzMVYyN0gzMHpNMzMsMjZIMzRWMjdIMzN6TTEsMjdIMlYyOEgxek0yLDI3SDNWMjhIMnpNMywyN0g0VjI4SDN6TTQsMjdINVYyOEg0ek01LDI3SDZWMjhINXpNNiwyN0g3VjI4SDZ6TTcsMjdIOFYyOEg3ek0xMiwyN0gxM1YyOEgxMnpNMTQsMjdIMTVWMjhIMTR6TTE1LDI3SDE2VjI4SDE1ek0xNiwyN0gxN1YyOEgxNnpNMTcsMjdIMThWMjhIMTd6TTE4LDI3SDE5VjI4SDE4ek0yMywyN0gyNFYyOEgyM3pNMjQsMjdIMjVWMjhIMjR6TTI1LDI3SDI2VjI4SDI1ek0yNywyN0gyOFYyOEgyN3pNMjksMjdIMzBWMjhIMjl6TTMwLDI3SDMxVjI4SDMwek0xLDI4SDJWMjlIMXpNNywyOEg4VjI5SDd6TTExLDI4SDEyVjI5SDExek0xNiwyOEgxN1YyOUgxNnpNMTcsMjhIMThWMjlIMTd6TTE4LDI4SDE5VjI5SDE4ek0xOSwyOEgyMFYyOUgxOXpNMjAsMjhIMjFWMjlIMjB6TTIyLDI4SDIzVjI5SDIyek0yMywyOEgyNFYyOUgyM3pNMjUsMjhIMjZWMjlIMjV6TTI5LDI4SDMwVjI5SDI5ek0zMSwyOEgzMlYyOUgzMXpNMzMsMjhIMzRWMjlIMzN6TTEsMjlIMlYzMEgxek0zLDI5SDRWMzBIM3pNNCwyOUg1VjMwSDR6TTUsMjlINlYzMEg1ek03LDI5SDhWMzBIN3pNMTQsMjlIMTVWMzBIMTR6TTE1LDI5SDE2VjMwSDE1ek0xNiwyOUgxN1YzMEgxNnpNMTcsMjlIMThWMzBIMTd6TTIwLDI5SDIxVjMwSDIwek0yMSwyOUgyMlYzMEgyMXpNMjIsMjlIMjNWMzBIMjJ6TTIzLDI5SDI0VjMwSDIzek0yNSwyOUgyNlYzMEgyNXpNMjYsMjlIMjdWMzBIMjZ6TTI3LDI5SDI4VjMwSDI3ek0yOCwyOUgyOVYzMEgyOHpNMjksMjlIMzBWMzBIMjl6TTEsMzBIMlYzMUgxek0zLDMwSDRWMzFIM3pNNCwzMEg1VjMxSDR6TTUsMzBINlYzMUg1ek03LDMwSDhWMzFIN3pNMTAsMzBIMTFWMzFIMTB6TTE0LDMwSDE1VjMxSDE0ek0xOSwzMEgyMFYzMUgxOXpNMjUsMzBIMjZWMzFIMjV6TTMxLDMwSDMyVjMxSDMxek0zMywzMEgzNFYzMUgzM3pNMSwzMUgyVjMySDF6TTMsMzFINFYzMkgzek00LDMxSDVWMzJINHpNNSwzMUg2VjMySDV6TTcsMzFIOFYzMkg3ek0xMCwzMUgxMVYzMkgxMHpNMTIsMzFIMTNWMzJIMTJ6TTE2LDMxSDE3VjMySDE2ek0xOCwzMUgxOVYzMkgxOHpNMjAsMzFIMjFWMzJIMjB6TTIyLDMxSDIzVjMySDIyek0yMywzMUgyNFYzMkgyM3pNMjQsMzFIMjVWMzJIMjR6TTI1LDMxSDI2VjMySDI1ek0yNiwzMUgyN1YzMkgyNnpNMjksMzFIMzBWMzJIMjl6TTMwLDMxSDMxVjMySDMwek0zMSwzMUgzMlYzMkgzMXpNMzIsMzFIMzNWMzJIMzJ6TTMzLDMxSDM0VjMySDMzek0xLDMySDJWMzNIMXpNNywzMkg4VjMzSDd6TTEwLDMySDExVjMzSDEwek0xMSwzMkgxMlYzM0gxMXpNMTMsMzJIMTRWMzNIMTN6TTIzLDMySDI0VjMzSDIzek0zMCwzMkgzMVYzM0gzMHpNMzEsMzJIMzJWMzNIMzF6TTEsMzNIMlYzNEgxek0yLDMzSDNWMzRIMnpNMywzM0g0VjM0SDN6TTQsMzNINVYzNEg0ek01LDMzSDZWMzRINXpNNiwzM0g3VjM0SDZ6TTcsMzNIOFYzNEg3ek05LDMzSDEwVjM0SDl6TTE0LDMzSDE1VjM0SDE0ek0xNSwzM0gxNlYzNEgxNXpNMTYsMzNIMTdWMzRIMTZ6TTE3LDMzSDE4VjM0SDE3ek0xOCwzM0gxOVYzNEgxOHpNMjMsMzNIMjRWMzRIMjN6TTI0LDMzSDI1VjM0SDI0ek0yNSwzM0gyNlYzNEgyNXpNMjgsMzNIMjlWMzRIMjh6TTMyLDMzSDMzVjM0SDMyeiIgaWQ9InFyLXBhdGgiIGZpbGw9IiMwMDAwMDAiIGZpbGwtb3BhY2l0eT0iMSIgZmlsbC1ydWxlPSJub256ZXJvIiBzdHJva2U9Im5vbmUiLz48L3N2Zz4=";
+function renderQr(total){
+  const box = $("#qrbox");
+  if(CONFIG.paymentQr){
+    box.innerHTML = `<img src="${esc(encodeURI(CONFIG.paymentQr))}" alt="QR ชำระเงิน">`;
+  } else {
+    box.innerHTML = `<img src="${DEMO_QR}" alt="QR ตัวอย่าง"><div class="demo"><span>ตัวอย่าง · ห้ามโอน</span></div>`;
+  }
+}
+
+async function sendToSheets(summary, total, methodName){
+  if(!CONFIG.sheetsUrl) return;
+  const c = order.customer;
+  try{
+    await fetch(CONFIG.sheetsUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},
+      body:JSON.stringify({
+        id:order.id, name:c.name, phone:c.phone, ig:c.ig||"", address:c.address, note:c.note||"",
+        items: cartLines().map(l=>`${l.p.code} ${l.p.th} x${l.qty}`).join(", "),
+        itemsTotal: itemsTotal(), discount: discount(), weight: totalWeight(),
+        shipMethod: methodName, shipFee: order.ship, total
+      })});
+  }catch(err){ console.warn(err); }
+}
+
+/* ---------- utils ---------- */
+function openCheckout(){ order = { customer: order.customer }; step1(); $("#sheet").classList.add("open"); }
+function closeSheet(){ $("#sheet").classList.remove("open"); }
+function copy(t){
+  const fallback = ()=>{ const a=document.createElement("textarea"); a.value=t; a.style.position="fixed"; a.style.opacity="0"; document.body.appendChild(a); a.select(); try{document.execCommand("copy");}catch(e){} a.remove(); };
+  if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).catch(fallback); else fallback();
+}
+function toast(m){ const t=$("#toast"); t.textContent=m; t.style.display="block"; setTimeout(()=>t.style.display="none",2400); }
+
+$("#checkoutBtn").onclick = openCheckout;
+$("#sheet").onclick = e=>{ if(e.target.id==="sheet") closeSheet(); };
+$("#zoom").onclick = ()=>$("#zoom").classList.remove("open");
+renderTabs(); renderList(); renderBar();
+</script>
+</body>
+</html>
