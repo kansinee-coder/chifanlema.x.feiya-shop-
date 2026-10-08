@@ -33,10 +33,15 @@ main{max-width:640px;margin:0 auto;padding:16px}
 .info .unit{font-size:12px;color:var(--muted);margin-top:2px}
 .bottom{margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .price{font-weight:700;color:var(--red);font-size:17px}
+.stock{display:inline-block;font-size:12px;font-weight:600;margin-top:4px;color:#b45f06}
+.stock.out{color:#990000}
+.card.out{opacity:.55}
+.card.out .thumb img{filter:grayscale(1)}
 .tag{display:inline-block;background:var(--gold);color:var(--ink);font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;margin-top:4px;align-self:flex-start}
 .qty{display:flex;align-items:center;gap:6px}
 .qty button{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--red);background:#fff;color:var(--red);font-size:18px;line-height:1;cursor:pointer}
 .qty button.plus{background:var(--red);color:#fff}
+.qty button:disabled{background:#d9c9bb;border-color:#d9c9bb;color:#fff;cursor:not-allowed}
 .qty span{min-width:20px;text-align:center;font-weight:600}
 .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,.06);z-index:5}
 .bar .in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px}
@@ -119,7 +124,8 @@ pre{white-space:pre-wrap;background:var(--cream);border-radius:12px;padding:12px
    ===================================================== */
 const CONFIG = {
   igUsername: "Chifanlema.x.feiya",
-  sheetsUrl: "",                 // วาง URL Google Apps Script (ดู SETUP.md)
+  sheetsUrl: "https://script.google.com/macros/s/AKfycbz6lbobTv1jwEIUXAm3VtBuDzjeXH0YjgdhygJKdCQLBPGif0ZWxL62op9jZYknFEbS/exec",                 // วาง URL Google Apps Script (ดู SETUP.md) — ว่าง = โหมดทดลอง ไม่เช็กสต็อก
+  showStockCount: false,         // true = โชว์ "เหลือ N" ทุกสินค้า · false = โชว์เฉพาะตอนใกล้หมด
   paymentQr: "",                 // ใส่ชื่อไฟล์รูป QR ธนาคาร เช่น "qr.jpg" — ถ้าว่าง จะแสดง QR ตัวอย่าง
   accountName: "ชื่อบัญชี: (ใส่ชื่อบัญชีของร้าน)",
 };
@@ -206,33 +212,56 @@ function thumb(p){
     ? `<div class="thumb" data-code="${p.code}"><img src="${esc(encodeURI(p.img))}" alt="${esc(p.th)}" loading="lazy" onerror="this.parentNode.removeAttribute('data-code');this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${p.emoji}'}))">${p.more&&p.more.length?`<span class="more">+${p.more.length}</span>`:""}</div>`
     : `<div class="thumb">${fallback}</div>`;
 }
+let STOCK = null;   // {code:{left,status}} จาก Google Sheet · null = ไม่เช็กสต็อก
+function leftOf(code){ return STOCK ? (STOCK[code] ? STOCK[code].left : 0) : Infinity; }
+async function loadStock(){
+  if(!CONFIG.sheetsUrl) return;
+  try{
+    const r = await fetch(CONFIG.sheetsUrl, {cache:"no-store"});
+    const d = await r.json();
+    if(d.ok){ STOCK = d.stock; clampCart(); renderList(); renderBar(); }
+  }catch(e){ console.warn("โหลดสต็อกไม่ได้", e); }
+}
+function clampCart(){
+  let changed = false;
+  for(const k in cart){ const l = leftOf(k); if(cart[k] > l){ changed = true; if(l<=0) delete cart[k]; else cart[k] = l; } }
+  return changed;
+}
+function stockLabel(p){
+  if(!STOCK) return "";
+  const s = STOCK[p.code] || {left:0,status:"หมด"};
+  if(s.left <= 0) return `<span class="stock out">หมดชั่วคราว</span>`;
+  if(CONFIG.showStockCount || s.status === "ใกล้หมด") return `<span class="stock">เหลือ ${s.left} ชิ้น</span>`;
+  return "";
+}
 function renderList(){
   const items = PRODUCTS.filter(p=>activeCat==="ทั้งหมด"||p.cat===activeCat);
   const showPromo = items.some(p=>p.promo);
   $("#list").innerHTML =
     (showPromo ? Object.values(PROMOS).map(pr=>`<div class="promo-banner">🔥 โปร: ${esc(pr.label)}</div>`).join("") : "") +
     items.map(p=>{
-      const q = cart[p.code]||0;
-      return `<div class="card">
+      const q = cart[p.code]||0, left = leftOf(p.code), out = left<=0;
+      return `<div class="card ${out?'out':''}">
         ${thumb(p)}
         <div class="info">
           <div class="brand">${esc(p.brand)}</div>
           <h3>${esc(p.th)}</h3>
           <div class="cn">${esc(p.cn)}</div>
           <div class="unit">${esc(p.unit)}</div>
+          ${stockLabel(p)}
           ${p.promo?`<span class="tag">${PROMOS[p.promo].qty} ถุง ${baht(PROMOS[p.promo].price)} คละรสได้</span>`:""}
           <div class="bottom">
             <span class="price">${baht(p.price)}</span>
             <div class="qty">
               ${q?`<button data-k="${p.code}" data-d="-1" aria-label="ลด">−</button><span>${q}</span>`:""}
-              <button class="plus" data-k="${p.code}" data-d="1" aria-label="เพิ่ม">+</button>
+              <button class="plus" data-k="${p.code}" data-d="1" aria-label="เพิ่ม" ${q>=left?"disabled":""}>+</button>
             </div>
           </div>
         </div>
       </div>`;
     }).join("");
   $("#list").querySelectorAll(".qty button").forEach(b=>b.onclick=()=>{
-    const k=b.dataset.k, n=(cart[k]||0)+Number(b.dataset.d);
+    const k=b.dataset.k, n=Math.min((cart[k]||0)+Number(b.dataset.d), leftOf(k));
     if(n<=0) delete cart[k]; else cart[k]=n;
     renderList(); renderBar();
   });
@@ -325,7 +354,26 @@ function step2(){
       </div>
     </form>`;
   $("#backBtn").onclick = ()=>{ order.customer = Object.fromEntries(new FormData($("#f"))); step1(); };
-  $("#f").onsubmit = e=>{ e.preventDefault(); order.customer = Object.fromEntries(new FormData(e.target)); step3(); };
+  $("#f").onsubmit = async e=>{
+    e.preventDefault();
+    order.customer = Object.fromEntries(new FormData(e.target));
+    const btn = e.target.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "กำลังตรวจสต็อก…";
+    const res = await placeOrder();
+    if(res.ok){ step3(); return; }
+    btn.disabled = false; btn.textContent = "ไปหน้าชำระเงิน →";
+    if(res.reason === "stock"){
+      STOCK = res.stock || STOCK;
+      const names = res.short.map(s=>{ const p=PRODUCTS.find(x=>x.code===s.code); return `• ${p?p.th:s.code} (เหลือ ${s.left})`; }).join("<br>");
+      clampCart(); renderList(); renderBar();
+      $("#panel").innerHTML = stepsBar(0) + `<h2>😢 ของไม่พอ</h2>
+        <div class="warn">ขออภัยค่ะ สินค้านี้เพิ่งถูกสั่งไป จำนวนเหลือไม่พอ:<br>${names}<br><br>ตะกร้าถูกปรับให้ตามจำนวนที่มีแล้ว</div>
+        <div class="actions"><button class="btn full" id="okBtn">กลับไปดูตะกร้า</button></div>`;
+      $("#okBtn").onclick = ()=>{ closeSheet(); };
+    } else {
+      toast("ส่งออเดอร์ไม่สำเร็จ ลองใหม่อีกครั้ง หรือทักร้านทาง IG ค่ะ");
+    }
+  };
 }
 
 function step3(){
@@ -352,18 +400,17 @@ ${cartLines().map(l=>`• ${l.p.code} ${l.p.th} × ${l.qty}`).join("\n")}${d?`\n
     <div class="howto"><b>ขั้นตอนหลังโอน</b><ol>
       <li>โอนเงินตามยอดด้านบน แล้วเซฟสลิปไว้</li>
       <li>กดปุ่ม <b>“คัดลอกออเดอร์ & ส่งทาง IG”</b></li>
-      <li>วางข้อความในแชท พร้อมแนบสลิป ร้านจะยืนยันและแจ้งเลขพัสดุค่ะ</li>
+      <li>วางข้อความในแชท พร้อมแนบสลิป ร้านจะยืนยันและแจ้งเลขพัสดุค่ะ</li>${order.placed?`<li>ถ้าต้องการแก้ที่อยู่/รายการ แจ้งร้านในแชทได้เลย</li>`:""}
     </ol></div>
     <pre>${esc(summary)}</pre>
     <div class="actions">
       <button class="btn full" id="dmBtn">📩 คัดลอกออเดอร์ & ส่งทาง IG</button>
-      <button class="btn ghost full" id="backBtn">← แก้ไขข้อมูล</button>
+      ${order.placed?"":`<button class="btn ghost full" id="backBtn">← แก้ไขข้อมูล</button>`}
     </div></div>`;
   renderQr(total);
-  $("#backBtn").onclick = step2;
+  if($("#backBtn")) $("#backBtn").onclick = step2;
   $("#dmBtn").onclick = ()=>{
     copy(summary); toast("คัดลอกแล้ว ✓ ไปวางในแชท + แนบสลิปได้เลย");
-    if(!order.sent){ sendToSheets(summary, total, methodName); order.sent = true; }
     setTimeout(()=>location.href="https://ig.me/m/"+CONFIG.igUsername,800);
   };
 }
@@ -378,23 +425,29 @@ function renderQr(total){
   }
 }
 
-async function sendToSheets(summary, total, methodName){
-  if(!CONFIG.sheetsUrl) return;
+async function placeOrder(){
+  if(!order.id) order.id = "CF" + new Date().toISOString().slice(2,10).replace(/-/g,"") + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
+  if(!CONFIG.sheetsUrl) return {ok:true};          // โหมดทดลอง
+  if(order.placed) return {ok:true};               // กันส่งซ้ำ
   const c = order.customer;
   try{
-    await fetch(CONFIG.sheetsUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},
+    const r = await fetch(CONFIG.sheetsUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
       body:JSON.stringify({
         id:order.id, name:c.name, phone:c.phone, ig:c.ig||"", address:c.address, note:c.note||"",
-        items: cartLines().map(l=>`${l.p.code} ${l.p.th} x${l.qty}`).join(", "),
-        itemsTotal: itemsTotal(), discount: discount(), weight: totalWeight(),
-        shipMethod: methodName, shipFee: order.ship, total
+        items: cartLines().map(l=>({code:l.p.code, qty:l.qty})),
+        discount: discount(), shipMethod: order.method==="ems"?"EMS":"ลงทะเบียน", shipFee: order.ship,
+        total: itemsTotal()+order.ship
       })});
-  }catch(err){ console.warn(err); }
+    const d = await r.json();
+    if(d.ok){ order.placed = true; loadStock(); }
+    return d;
+  }catch(err){ console.warn(err); return {ok:false, reason:"network"}; }
 }
 
 /* ---------- utils ---------- */
 function openCheckout(){ order = { customer: order.customer }; step1(); $("#sheet").classList.add("open"); }
-function closeSheet(){ $("#sheet").classList.remove("open"); }
+function resetAfterOrder(){ for(const k in cart) delete cart[k]; order = { customer: order.customer }; renderList(); renderBar(); }
+function closeSheet(){ $("#sheet").classList.remove("open"); if(order.placed) resetAfterOrder(); }
 function copy(t){
   const fallback = ()=>{ const a=document.createElement("textarea"); a.value=t; a.style.position="fixed"; a.style.opacity="0"; document.body.appendChild(a); a.select(); try{document.execCommand("copy");}catch(e){} a.remove(); };
   if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).catch(fallback); else fallback();
@@ -404,7 +457,7 @@ function toast(m){ const t=$("#toast"); t.textContent=m; t.style.display="block"
 $("#checkoutBtn").onclick = openCheckout;
 $("#sheet").onclick = e=>{ if(e.target.id==="sheet") closeSheet(); };
 $("#zoom").onclick = ()=>$("#zoom").classList.remove("open");
-renderTabs(); renderList(); renderBar();
+renderTabs(); renderList(); renderBar(); loadStock();
 </script>
 </body>
 </html>
