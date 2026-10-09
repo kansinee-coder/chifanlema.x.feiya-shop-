@@ -3,19 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Chifanlema — สั่งขนมออนไลน์</title>
+<title>Chifanlema.x.Feiya — สั่งขนมออนไลน์</title>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --primary:#33547a; --primary-2:#4f7ba3; --matcha:#7c9a5e; --matcha-dk:#4e6b39; --matcha-soft:#e9efdc;
-  --cream:#f8f6f0; --ink:#2a3340; --muted:#6d7682; --line:#e3e1d8; --card:#ffffff;
-  --soft:#eef3f7; --note:#fbf3e2; --off:#c9cfd6;
+  --primary:#1f4f7d; --primary-2:#4fb3e0; --sky:#7fd0f2; --sky-soft:#e3f4fc;
+  --matcha:#8cc63f; --matcha-dk:#4f8f2a; --matcha-soft:#eaf6d8;
+  --coral:#ff8a65; --coral-dk:#e0623d;
+  --cream:#f4fbfe; --ink:#1f3550; --muted:#5f7286; --line:#d6ecf7; --card:#ffffff;
+  --soft:#e8f5fc; --note:#fff4e3; --off:#c7d6e0;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Prompt',system-ui,sans-serif;background:var(--cream);color:var(--ink);padding-bottom:110px}
 header{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;padding:28px 16px 24px;text-align:center;position:relative;overflow:hidden}
 header::after{content:"";position:absolute;inset:auto 0 0 0;height:6px;background:var(--matcha)}
-header h1{font-size:28px;font-weight:600;letter-spacing:.5px}
+header h1{font-size:28px;font-weight:600;letter-spacing:.3px}
+header h1 .x{color:#c8e6a8}
+@media (max-width:360px){header h1{font-size:24px}}
 header p{opacity:.9;font-size:14px;margin-top:4px}
 .ig{display:inline-block;margin-top:10px;background:rgba(255,255,255,.15);padding:4px 12px;border-radius:99px;font-size:13px;color:#fff;text-decoration:none}
 main{max-width:640px;margin:0 auto;padding:16px}
@@ -110,11 +114,59 @@ details.sum summary{cursor:pointer;font-size:14px;color:var(--muted)}
 .more{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:1px 6px;border-radius:6px}
 .thumb{position:relative}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;display:none;z-index:40}
+
+/* ===== ธีมสดใส (ให้เข้ากับรูป QR) ===== */
+body{background:linear-gradient(180deg,#eaf7fd 0%,#f4fbf0 60%,#eef8e1 100%) fixed;color:var(--ink)}
+header{background:linear-gradient(170deg,#7fd0f2 0%,#b7e6f8 55%,#dff3c6 100%);color:var(--primary);padding:30px 16px 34px;border-radius:0 0 28px 28px;box-shadow:0 6px 0 #c8e9a0}
+header::after{display:none}
+header h1{position:relative;z-index:1;font-size:30px;font-weight:700;color:var(--primary);text-shadow:0 3px 0 #fff;letter-spacing:.2px}
+header h1 .x{color:#5aa832}
+header p{position:relative;z-index:1;display:inline-block;opacity:1;margin-top:8px;background:#fff;color:#3a8a3f;font-weight:600;font-size:14px;padding:4px 16px;border-radius:99px;box-shadow:0 3px 0 var(--matcha)}
+.ig{position:relative;z-index:1;display:table;margin:12px auto 0;background:rgba(255,255,255,.75);color:var(--primary);font-weight:500}
+.deco{position:absolute;pointer-events:none}
+.deco.cup{width:62px;left:8px;top:112px}
+.deco.cookie{width:46px;right:12px;top:108px;transform:rotate(12deg)}
+.deco.leaf{width:30px;right:52px;bottom:14px;transform:rotate(140deg)}
+.deco.s1{width:20px;left:26px;top:20px}
+.deco.s2{width:22px;right:20px;top:16px}
+.deco.s3{width:16px;left:84px;bottom:18px}
+@media (max-width:360px){header h1{font-size:25px}.deco.cup{width:50px}.deco.cookie{width:38px}}
+.tabs button{border:2px solid var(--primary-2);color:var(--primary);font-weight:500}
+.tabs button.on{background:var(--primary-2);color:#fff;box-shadow:0 3px 0 #2f8fbf}
+.promo-banner{background:#fff;color:var(--matcha-dk);border:2px dashed var(--matcha);font-weight:600}
+.card{border:2px solid var(--line);border-radius:20px;box-shadow:0 5px 0 var(--line)}
+.thumb{background:var(--sky-soft);border-radius:16px}
+.price{color:var(--primary)}
+.tag{background:var(--matcha-soft);color:var(--matcha-dk)}
+.qty button{border:2px solid var(--primary-2);color:var(--primary-2)}
+.qty button.plus{background:var(--primary-2);color:#fff;box-shadow:0 3px 0 #2f8fbf}
+.qty button:disabled{box-shadow:none}
+.bar{border-top:2px solid var(--line)}
+.btn{background:var(--coral);border-radius:16px;box-shadow:0 5px 0 var(--coral-dk);font-weight:700}
+.btn:active{transform:translateY(2px);box-shadow:0 3px 0 var(--coral-dk)}
+.btn:disabled{background:var(--off);box-shadow:0 5px 0 #aebfcc}
+.btn.ghost{background:#fff;color:var(--primary);border:2px solid var(--primary-2);box-shadow:0 4px 0 var(--line)}
+.panel{border-radius:26px 26px 0 0;background:#fff}
+.steps div.on{color:var(--primary-2);border-color:var(--primary-2)}
+.steps div.done{border-color:var(--matcha)}
+.opt{border-radius:18px}
+.opt.on{border-color:var(--primary-2);background:var(--sky-soft)}
+.opt input{accent-color:var(--primary-2)}
+input:focus,textarea:focus{border-color:var(--primary-2)}
+.pay .amount{color:var(--coral-dk)}
+.qrbox{border:3px dashed #b7e07a;border-radius:24px}
+.savebtn{color:var(--primary);border:2px solid var(--primary-2)}
+.slip{border:3px dashed var(--primary-2);background:#f7fcff;border-radius:22px}
+.slippick{background:var(--sky-soft);color:var(--primary)}
+.slipdone{background:var(--matcha-soft);color:var(--matcha-dk)}
+.line.disc{color:var(--matcha-dk)}
+.stock{color:#d9822b}
 </style>
 </head>
 <body>
 <header>
-  <h1>Chifanlema</h1>
+  <svg class="deco cup" viewBox="0 0 220 200" aria-hidden="true"><path d="M70 40 q-12 -18 0 -34 M105 38 q-12 -18 0 -34 M140 40 q-12 -18 0 -34" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round" opacity=".8"/><ellipse cx="105" cy="78" rx="92" ry="22" fill="#fff"/><ellipse cx="105" cy="80" rx="80" ry="15" fill="#8cc63f"/><path d="M13 80 q8 92 92 98 q84 -6 92 -98 q-30 18 -92 18 q-62 0 -92 -18z" fill="#fff"/><path d="M26 120 q79 30 158 0" stroke="#4fb3e0" stroke-width="10" fill="none"/><path d="M60 158 q45 16 90 0" stroke="#ffd45c" stroke-width="7" fill="none" stroke-linecap="round"/></svg><svg class="deco cookie" viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="72" fill="#f4c27a"/><circle cx="80" cy="80" r="58" fill="#f8d496"/><g fill="#d99a45"><circle cx="55" cy="58" r="6"/><circle cx="96" cy="50" r="6"/><circle cx="108" cy="92" r="6"/><circle cx="66" cy="104" r="6"/><circle cx="82" cy="78" r="6"/></g></svg><svg class="deco leaf" viewBox="0 0 120 120" aria-hidden="true"><path d="M10 110 C10 50 50 10 110 10 C110 70 70 110 10 110z" fill="#8cc63f"/><path d="M14 106 C40 80 70 50 100 20" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".7"/></svg><svg class="deco s1" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 38 62 45 100 50 C62 55 55 62 50 100 C45 62 38 55 0 50 C38 45 45 38 50 0z" fill="#ffd45c"/></svg><svg class="deco s2" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 38 62 45 100 50 C62 55 55 62 50 100 C45 62 38 55 0 50 C38 45 45 38 50 0z" fill="#fff"/></svg><svg class="deco s3" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 0 C55 38 62 45 100 50 C62 55 55 62 50 100 C45 62 38 55 0 50 C38 45 45 38 50 0z" fill="#ffd45c"/></svg>
+  <h1>Chifanlema<span class="x">.x.</span>Feiya</h1>
   <p>ขนมอร่อย สั่งง่าย ส่งถึงบ้าน</p>
   <a class="ig" id="igLink" target="_blank" rel="noopener">📷 @Chifanlema.x.feiya</a>
 </header>
@@ -528,14 +580,14 @@ function payCard(total){
   const qr = qrCanvas(promptpayPayload(CONFIG.promptpayId, total), 600);
   const W = 720, H = 1000, c = document.createElement("canvas"); c.width=W; c.height=H;
   const g = c.getContext("2d"); const font = "Prompt, system-ui, sans-serif";
-  g.fillStyle="#33547a"; g.fillRect(0,0,W,H);
+  g.fillStyle="#4fb3e0"; g.fillRect(0,0,W,H);
   g.fillStyle="#fff"; g.fillRect(30,30,W-60,H-60);
-  g.fillStyle="#33547a"; g.fillRect(30,30,W-60,110);
+  g.fillStyle="#1f4f7d"; g.fillRect(30,30,W-60,110);
   g.fillStyle="#fff"; g.textAlign="center"; g.font=`600 44px ${font}`; g.fillText("PromptPay พร้อมเพย์", W/2, 102);
   g.drawImage(qr, (W-qr.width)/2, 165);
   g.fillStyle="#2a3340"; g.font=`600 30px ${font}`; g.fillText(CONFIG.accountName, W/2, 815);
   g.fillStyle="#6d7682"; g.font=`26px ${font}`; g.fillText(CONFIG.bankName + " · Chifanlema", W/2, 857);
-  g.fillStyle="#33547a"; g.font=`700 54px ${font}`; g.fillText("฿" + total.toLocaleString("th-TH",{minimumFractionDigits:2}), W/2, 930);
+  g.fillStyle="#e0623d"; g.font=`700 54px ${font}`; g.fillText("฿" + total.toLocaleString("th-TH",{minimumFractionDigits:2}), W/2, 930);
   return c.toDataURL("image/png");
 }
 function renderQr(total){
