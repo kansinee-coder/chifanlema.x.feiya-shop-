@@ -214,12 +214,13 @@ const SHIPPING = [
 ]; // เกิน 2000 g → ให้ติดต่อร้าน
 
 /* โปรโมชั่นแบบคละ: สินค้าที่อยู่ในกลุ่มเดียวกันนับรวมกัน */
-const PROMOS = {
-  kkbear: { qty: 3, price: 200, label: "KKBear 3 ถุง 200 คละรสได้" },
+/* ข้อมูลสำรอง — ใช้เฉพาะตอนโหลดจาก Google Sheet ไม่ได้ (ปกติหน้าเว็บจะดึงสินค้าจากแท็บ Stock) */
+let PROMOS = {
+  kkbear: { qty: 3, price: 200, text: "3 ถุง 200", label: "KKBear 3 ถุง 200 คละรสได้" },
 };
 
 /* สินค้า (จาก products_info.xlsx) */
-const PRODUCTS = [
+let PRODUCTS = [
   { code:"MAT01", cat:"มัทฉะ", brand:"和风宇治", cn:"五十铃抹茶粉", th:"มัทฉะ 五十铃",
     weight:250, price:169, unit:"1 ถุง", img:"product pics/Matcha01.jpg", more:["product pics/Matcha01-2.jpg"], emoji:"🍵" },
   { code:"SNA01", cat:"ถั่ว & ผลไม้แห้ง", brand:"百草味", cn:"桂花味板栗", th:"เกาลัด รสดอกกุ้ยฮวา",
@@ -262,7 +263,7 @@ function discount(){
     if (n >= pr.qty){
       const unitPrice = lines[0].p.price;
       const sets = Math.floor(n / pr.qty);
-      d += sets * (pr.qty*unitPrice - pr.price);
+      d += Math.max(0, sets * (pr.qty*unitPrice - pr.price));
     }
   }
   return d;
@@ -286,12 +287,40 @@ function thumb(p){
 }
 let STOCK = null;   // {code:{left,status}} จาก Google Sheet · null = ไม่เช็กสต็อก
 function leftOf(code){ return STOCK ? (STOCK[code] ? STOCK[code].left : 0) : Infinity; }
+/* ---------- สินค้าจาก Google Sheet ---------- */
+function picPath(f){ return /[\/]/.test(f) || /^https?:/.test(f) ? f : "product pics/" + f; }
+function emojiFor(cat){ return /มัทฉะ|ชา|เครื่องดื่ม/.test(cat) ? "🍵" : /ถั่ว|ผลไม้/.test(cat) ? "🌰" : /บิสกิต|คุกกี้|ขนม/.test(cat) ? "🍪" : /ลูกอม/.test(cat) ? "🍬" : "🛍️"; }
+function applySheetProducts(list){
+  const promos = {};
+  PRODUCTS = list.map(p=>{
+    let key;
+    if(p.promo){
+      const n = (p.promo.match(/\d+(\.\d+)?/g)||[]).map(Number);
+      if(n.length >= 2){
+        key = "p_" + p.promo;
+        if(!promos[key]) promos[key] = { qty:n[0], price:n[1], text:p.promo, brands:new Set() };
+        promos[key].brands.add(p.brand);
+      }
+    }
+    return { code:p.code, cat:p.cat, brand:p.brand, cn:p.cn, th:p.th, weight:p.weight, price:p.price,
+             unit:p.unit, img:p.imgs[0] ? picPath(p.imgs[0]) : "", more:p.imgs.slice(1).map(picPath),
+             emoji:emojiFor(p.cat), promo:key };
+  });
+  for(const k in promos){ const pr = promos[k]; pr.label = [...pr.brands].filter(Boolean).join(" / ") + " " + pr.text + " คละได้"; delete pr.brands; }
+  PROMOS = promos;
+  const codes = new Set(PRODUCTS.map(p=>p.code));
+  for(const k in cart) if(!codes.has(k)) delete cart[k];
+  if(activeCat !== "ทั้งหมด" && !PRODUCTS.some(p=>p.cat===activeCat)) activeCat = "ทั้งหมด";
+}
 async function loadStock(){
   if(!CONFIG.sheetsUrl) return;
   try{
     const r = await fetch(CONFIG.sheetsUrl, {cache:"no-store"});
     const d = await r.json();
-    if(d.ok){ STOCK = d.stock; clampCart(); renderList(); renderBar(); }
+    if(d.ok){
+      if(Array.isArray(d.products) && d.products.length) applySheetProducts(d.products);
+      STOCK = d.stock; clampCart(); renderTabs(); renderList(); renderBar();
+    }
   }catch(e){ console.warn("โหลดสต็อกไม่ได้", e); }
 }
 function clampCart(){
@@ -310,7 +339,7 @@ function renderList(){
   const items = PRODUCTS.filter(p=>activeCat==="ทั้งหมด"||p.cat===activeCat);
   const showPromo = items.some(p=>p.promo);
   $("#list").innerHTML =
-    (showPromo ? Object.values(PROMOS).map(pr=>`<div class="promo-banner">🔥 โปร: ${esc(pr.label)}</div>`).join("") : "") +
+    (showPromo ? Object.entries(PROMOS).filter(([k])=>items.some(p=>p.promo===k)).map(([,pr])=>`<div class="promo-banner">🔥 โปร: ${esc(pr.label)}</div>`).join("") : "") +
     items.map(p=>{
       const q = cart[p.code]||0, left = leftOf(p.code), out = left<=0;
       return `<div class="card ${out?'out':''}">
@@ -321,7 +350,7 @@ function renderList(){
           <div class="cn">${esc(p.cn)}</div>
           <div class="unit">${esc(p.unit)}</div>
           ${stockLabel(p)}
-          ${p.promo?`<span class="tag">${PROMOS[p.promo].qty} ถุง ${baht(PROMOS[p.promo].price)} คละรสได้</span>`:""}
+          ${p.promo&&PROMOS[p.promo]?`<span class="tag">${esc(PROMOS[p.promo].text)} คละได้</span>`:""}
           <div class="bottom">
             <span class="price">${baht(p.price)}</span>
             <div class="qty">
@@ -358,7 +387,7 @@ function stepsBar(i){
 function itemsSummaryHtml(){
   const d = discount();
   return cartLines().map(l=>`<div class="line"><span>${esc(l.p.th)} × ${l.qty}</span><span>${baht(l.sub)}</span></div>`).join("")
-    + (d?`<div class="line disc"><span>ส่วนลดโปร KKBear</span><span>−${baht(d)}</span></div>`:"")
+    + (d?`<div class="line disc"><span>ส่วนลดโปรคละ</span><span>−${baht(d)}</span></div>`:"")
     + `<div class="line" style="font-weight:600"><span>รวมค่าสินค้า</span><span>${baht(itemsTotal())}</span></div>`;
 }
 

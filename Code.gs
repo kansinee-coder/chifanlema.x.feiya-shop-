@@ -1,6 +1,6 @@
 /**
  * Chifanlema — เชื่อมหน้าร้านกับ Google Sheet (Stock / Orders) + รับสลิป
- *  - GET  : ส่งยอดคงเหลือให้หน้าเว็บ
+ *  - GET  : ส่งรายการสินค้า (ชื่อ ราคา น้ำหนัก รูป โปร) + ยอดคงเหลือ จากแท็บ Stock ให้หน้าเว็บ
  *  - POST action "order" : ตรวจสต็อก แล้วบันทึกออเดอร์ลงแท็บ Orders (1 แถวต่อ 1 สินค้า) สถานะ "รอโอน"
  *  - POST action "slip"  : เก็บรูปสลิปในโฟลเดอร์ Drive "Chifanlema สลิป" ใส่ลิงก์ในแท็บ Orders และเปลี่ยนสถานะเป็น "รอตรวจสลิป"
  * วิธีติดตั้ง/อัปเดต: ดู SETUP.md
@@ -17,8 +17,23 @@ const STATUSES = ["รอโอน", "รอตรวจสลิป", "ชำ�
 const SLIP_FOLDER = "Chifanlema สลิป";
 const MAX_SLIP_BYTES = 5 * 1024 * 1024;
 
+// คอลัมน์เสริมในแท็บ Stock (ระบบเพิ่มให้ถ้ายังไม่มี)
+const PRODUCT_COLS = ["หมวด", "หน่วย", "รูป", "โปรคละ", "แสดงบนเว็บ"];
+const DEFAULTS = {   // ค่าเริ่มต้นของสินค้าเดิม ใส่ให้ครั้งเดียวตอนตั้งค่า
+  "MAT01": ["มัทฉะ", "1 ถุง", "Matcha01.jpg, Matcha01-2.jpg", "", "ใช่"],
+  "SNA01": ["ถั่ว & ผลไม้แห้ง", "แพ็ก 4 ถุง", "SNA01-01.jpg", "", "ใช่"],
+  "SNA07": ["ถั่ว & ผลไม้แห้ง", "1 ถุง (250 g)", "SNA07-01.jpg", "", "ใช่"],
+  "SNA08": ["ถั่ว & ผลไม้แห้ง", "1 ถุง (250 g)", "SNA08-01.jpg", "", "ใช่"],
+  "SNA07+SNA08": ["ถั่ว & ผลไม้แห้ง", "1 ถุง (250 g)", "SNA07-SNA08.jpg", "", "ใช่"],
+  "SNA15": ["ถั่ว & ผลไม้แห้ง", "1 ถุง", "SNA15-01.jpg", "", "ใช่"],
+  "SNA16": ["บิสกิต", "1 ถุง", "SNA16.jpg", "3 ถุง 200", "ใช่"],
+  "SNA17": ["บิสกิต", "1 ถุง", "SNA17.jpg", "3 ถุง 200", "ใช่"],
+  "SNA18": ["บิสกิต", "1 ถุง", "SNA18.jpg", "3 ถุง 200", "ใช่"]
+};
+
 function doGet() {
-  return json({ ok: true, stock: readStock_() });
+  setupStock_();
+  return json({ ok: true, stock: readStock_(), products: readProducts_() });
 }
 
 function doPost(e) {
@@ -99,6 +114,57 @@ function slipFolder_() {
   return it.hasNext() ? it.next() : DriveApp.createFolder(SLIP_FOLDER);
 }
 
+// ---------- สินค้าจากแท็บ Stock ----------
+function stockSheet_() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Stock"); }
+
+function readProducts_() {
+  const v = stockSheet_().getDataRange().getValues();
+  const h = v[0].map(x => String(x).trim());
+  const col = name => h.findIndex(x => x.indexOf(name) === 0);
+  const c = { code: 0, th: col("ชื่อสินค้า"), cn: col("ชื่อ (CN)"), brand: col("ยี่ห้อ"), price: col("ราคาขาย"),
+              weight: col("น้ำหนัก"), left: col("คงเหลือ"), status: col("สถานะ"),
+              cat: col("หมวด"), unit: col("หน่วย"), img: col("รูป"), promo: col("โปรคละ"), show: col("แสดงบนเว็บ") };
+  const get = (row, k) => (c[k] >= 0 ? row[c[k]] : "");
+  const out = [];
+  for (let r = 1; r < v.length; r++) {
+    const row = v[r], code = String(row[0]).trim();
+    const price = Number(get(row, "price"));
+    if (!code || !String(get(row, "th")).trim() || !price) continue;
+    if (String(get(row, "show")).trim() === "ไม่") continue;
+    out.push({
+      code: code, th: String(get(row, "th")).trim(), cn: String(get(row, "cn")).trim(),
+      brand: String(get(row, "brand")).trim(), price: price, weight: Number(get(row, "weight")) || 0,
+      cat: String(get(row, "cat")).trim() || "อื่น ๆ", unit: String(get(row, "unit")).trim(),
+      imgs: String(get(row, "img")).split(",").map(s => s.trim()).filter(String),
+      promo: String(get(row, "promo")).trim()
+    });
+  }
+  return out;
+}
+
+function setupStock_() {
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty("setup_v5") === "done") return;
+  const sh = stockSheet_();
+  const lastCol = sh.getLastColumn();
+  const head = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(x => String(x).trim());
+  let start = head.indexOf(PRODUCT_COLS[0]) + 1;
+  if (!start) {
+    start = lastCol + 1;
+    sh.getRange(1, start, 1, PRODUCT_COLS.length).setValues([PRODUCT_COLS])
+      .setFontWeight("bold").setBackground("#4fb3e0").setFontColor("#FFFFFF").setHorizontalAlignment("center");
+    const v = sh.getDataRange().getValues();
+    for (let r = 1; r < v.length; r++) {
+      const d = DEFAULTS[String(v[r][0]).trim()];
+      if (d) sh.getRange(r + 1, start, 1, d.length).setValues([d]);
+    }
+    const showRule = SpreadsheetApp.newDataValidation().requireValueInList(["ใช่", "ไม่"], true).build();
+    sh.getRange(2, start + 4, Math.max(sh.getMaxRows() - 1, 1), 1).setDataValidation(showRule);
+    sh.setColumnWidth(start + 2, 220);
+  }
+  props.setProperty("setup_v5", "done");
+}
+
 // ---------- helpers ----------
 function ordersSheet_() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Orders"); }
 
@@ -156,5 +222,6 @@ function json(o) {
 // รันฟังก์ชันนี้ 1 ครั้งจากหน้า Apps Script เพื่อกดอนุญาตสิทธิ์ Google Drive
 function authorize() {
   slipFolder_();
-  Logger.log("พร้อมแล้ว: โฟลเดอร์ " + SLIP_FOLDER);
+  setupStock_();
+  Logger.log("พร้อมแล้ว: โฟลเดอร์ " + SLIP_FOLDER + " และคอลัมน์สินค้าในแท็บ Stock");
 }
