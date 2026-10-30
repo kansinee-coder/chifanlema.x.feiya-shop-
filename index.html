@@ -172,6 +172,8 @@ main{position:relative;z-index:1}
 .bar,.sheet{z-index:10}
 .card{background:rgba(255,255,255,.94)}
 .bar .sum small{display:block;font-size:12px;color:var(--matcha-dk);font-weight:600;margin-top:1px}
+.memban{background:#fff6e6!important;color:#8a5a00!important;border-color:#f5c26b!important;line-height:1.55}
+.memban small{display:block;font-weight:400;font-size:12px;opacity:.85}
 .shipban{background:var(--sky-soft)!important;color:var(--primary)!important;border-color:var(--primary-2)!important}
 .nudge{background:var(--matcha-soft);color:var(--matcha-dk);border-radius:12px;padding:8px 12px;font-size:13.5px;margin-top:8px}
 .inrow{display:flex;gap:8px;align-items:center}.inrow input{flex:1;min-width:0}
@@ -405,6 +407,7 @@ function renderList(){
   const showPromo = items.some(p=>p.promo);
   const t0 = TIERS[0], tMax = TIERS.length ? TIERS[TIERS.length-1] : null;
   $("#list").innerHTML =
+    (LOYAL && CONFIG.sheetsUrl ? `<div class="promo-banner memban">⭐ <b>สมาชิกฟรี!</b> ทุก ${baht(LOYAL.perPoint)} ได้ 1 แต้ม · ${LOYAL.step} แต้ม = ส่วนลด ${baht(LOYAL.value)}${LOYAL.bday?` · เดือนเกิดรับส่วนลด ${baht(LOYAL.bday)}${LOYAL.bdayMin?` (ซื้อครบ ${baht(LOYAL.bdayMin)})`:""}`:""}<small>สมัครได้ตอนสั่งซื้อ แค่ใส่เบอร์โทร</small></div>` : "") +
     (t0 ? `<div class="promo-banner shipban">🚚 ซื้อครบ ${baht(t0.min)} ลดค่าส่ง ${baht(t0.off)} · ยิ่งซื้อยิ่งลด สูงสุด ${baht(tMax.off)}</div>` : "") +
     (showPromo ? Object.entries(PROMOS).filter(([k])=>items.some(p=>p.promo===k)).map(([,pr])=>`<div class="promo-banner">🔥 โปร: ${esc(pr.label)}</div>`).join("") : "") +
     items.map(p=>{
@@ -572,7 +575,7 @@ function step2(){
       </div>`;
     } else if(m && !m.member){
       html = `<div class="memcard">
-        <label class="chk"><input type="checkbox" id="joinChk" ${order.join?"checked":""}><span>⭐ <b>สมัครสมาชิกฟรี</b> ด้วยเบอร์นี้ — ทุก ${baht(LOYAL?LOYAL.perPoint:100)} ได้ 1 แต้ม · ${LOYAL?LOYAL.step:10} แต้ม = ส่วนลด ${baht(LOYAL?LOYAL.value:20)}${LOYAL&&LOYAL.bday?` · เดือนเกิดรับส่วนลด ${baht(LOYAL.bday)}`:""}</span></label>
+        <label class="chk"><input type="checkbox" id="joinChk" ${order.join?"checked":""}><span>⭐ <b>สมัครสมาชิกฟรี</b> ด้วยเบอร์นี้ — ทุก ${baht(LOYAL?LOYAL.perPoint:100)} ได้ 1 แต้ม · ${LOYAL?LOYAL.step:10} แต้ม = ส่วนลด ${baht(LOYAL?LOYAL.value:20)}${LOYAL&&LOYAL.bday?` · เดือนเกิดรับส่วนลด ${baht(LOYAL.bday)}${LOYAL.bdayMin?` (ซื้อครบ ${baht(LOYAL.bdayMin)})`:""}`:""}</span></label>
         ${order.join?`<div class="bdrow">วันเกิด <small>(ไม่บังคับ)</small>
           <select id="bdD"><option value="">วัน</option>${Array.from({length:31},(_,i)=>`<option ${order.bdD==i+1?"selected":""}>${i+1}</option>`).join("")}</select>
           <select id="bdM"><option value="">เดือน</option>${["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."].map((n,i)=>`<option value="${i+1}" ${order.bdM==i+1?"selected":""}>${n}</option>`).join("")}</select></div>`:""}
