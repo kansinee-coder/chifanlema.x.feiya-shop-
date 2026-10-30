@@ -207,7 +207,7 @@ async function api(action, body={}, label){
 }
 const ERR = { network:"เชื่อมต่อไม่ได้ ลองใหม่อีกครั้งค่ะ", notfound:"ไม่พบรายการนี้ (อาจมีคนแก้ในชีทไปแล้ว) ลองโหลดใหม่ค่ะ", input:"กรอกข้อมูลให้ครบก่อนนะคะ",
   rate:"กรุณาใส่เรทหยวน", exists:"มีข้อมูลนี้อยู่แล้ว", inuse:"เปลี่ยนวันที่ไม่ได้ เพราะมีล็อตสินค้าใช้เรทวันนี้อยู่ (แก้ได้แค่ตัวเลขเรท)",
-  items:"ใส่สินค้าอย่างน้อย 1 รายการ", amount:"ใส่จำนวนเงิน", category:"เลือกหมวด", newproduct:"ใส่ชื่อสินค้าใหม่", noslip:"ออเดอร์นี้ไม่มีสลิป" };
+  items:"ใส่สินค้าอย่างน้อย 1 รายการ", code:"โค้ดใช้ได้แค่ตัวอังกฤษ/ตัวเลข 3–20 ตัว", nopromo:"ยังไม่ได้ตั้งค่าแท็บคูปอง/สมาชิกในไฟล์ stock", pin4:"รหัสต้องเป็นตัวเลข 4 หลัก", amount:"ใส่จำนวนเงิน", category:"เลือกหมวด", newproduct:"ใส่ชื่อสินค้าใหม่", noslip:"ออเดอร์นี้ไม่มีสลิป" };
 async function act(action, body, okMsg, label){
   const r = await api(action, body, label || "กำลังบันทึก…");
   if(r.ok){ if(r.data) DATA = r.data; if(okMsg) toast(okMsg); return r; }
@@ -300,7 +300,7 @@ function route(){ const [v,t] = (location.hash.slice(1) || "home").split("/"); r
 function render(){
   if(!DATA) return;
   const {v,t} = route();
-  const V = { home:vHome, orders:vOrders, income:vIncome, expense:vExpense, products:vProducts, costs:vCosts, rates:vRates, summary:vSummary }[v] || vHome;
+  const V = { home:vHome, orders:vOrders, income:vIncome, expense:vExpense, products:vProducts, costs:vCosts, rates:vRates, summary:vSummary, promo:vPromo }[v] || vHome;
   $("#main").innerHTML = (DEMO?`<div class="demo">โหมดทดลอง — ข้อมูลตัวอย่าง ไม่บันทึกจริง</div>`:"") + V(t) +
     (v==="home" ? `<div class="foot"><button data-act="reload">🔄 โหลดข้อมูลใหม่</button> · <button data-act="logout">ออกจากระบบ</button></div>` : "");
 }
@@ -324,6 +324,7 @@ function vHome(){
     <button class="tile" data-go="products/list"><span class="ic">🍵</span><b>ข้อมูลสินค้า</b><small>${DATA.products.length} รายการ${low?` · <span class="pill p-amber">ใกล้หมด/หมด ${low}</span>`:""}</small></button>
     <button class="tile" data-go="costs/list"><span class="ic">🏷️</span><b>สินค้า (ต้นทุน)</b><small>${DATA.cost.sells.length} รหัสขาย · ${DATA.cost.lots.length} ล็อต</small></button>
     <button class="tile" data-go="rates"><span class="ic">💱</span><b>อัตราแลกเปลี่ยน</b><small>${lastRate?`ล่าสุด ¥1 = ฿${lastRate.rate}<br>${dTH(lastRate.date)}`:"ยังไม่มีข้อมูล"}</small></button>
+    <button class="tile wide" data-go="promo/coupons"><span class="ic">🎟️</span><div><b>คูปอง & สมาชิก</b><br><small>${DATA.promo&&DATA.promo.ready?`คูปองใช้ได้ ${DATA.promo.coupons.filter(c=>couponState(c)[1]==="ใช้ได้").length} · สมาชิก ${DATA.promo.members.length} คน${pendingAddrs().length?` <span class="pill p-amber">ที่อยู่รออนุมัติ ${pendingAddrs().length}</span>`:""}`:"ยังไม่ได้ตั้งค่า"}</small></div></button>
     <button class="tile wide" data-go="summary"><span class="ic">📊</span><div><b>สรุปรายได้ร้าน</b><br><small>เดือนนี้ ${baht(mt.net)} · ตั้งแต่เริ่มร้าน ${baht(all)}</small></div></button>
   </div>`;
 }
@@ -361,11 +362,11 @@ function openOrder(id){
   openSheet(`ออเดอร์ ${o.id}`, `
     <div style="margin-bottom:6px">${statusPill(o.status)} <span class="note">${dTH(o.date)} · ${esc(o.channel)}</span></div>
     <table class="items">${items}
-      ${o.discount?`<tr><td>ส่วนลด</td><td>−${baht(o.discount)}</td></tr>`:""}
-      <tr><td>ค่าส่ง ${o.shipMethod?`(${esc(o.shipMethod)})`:""}</td><td>${baht(o.shipFee)}</td></tr>
+      ${o.discount?`<tr><td>ส่วนลด${o.coupon||o.pointsUsed?`<br><span class="note">${o.coupon?`โค้ด ${esc(o.coupon)}`:""}${o.pointsUsed?` · ใช้ ${o.pointsUsed} แต้ม`:""}</span>`:""}</td><td>−${baht(o.discount)}</td></tr>`:""}
+      <tr><td>ค่าส่ง ${o.shipMethod?`(${esc(o.shipMethod)})`:""}${o.shipDisc?`<br><span class="note">ลดค่าส่งแล้ว ${baht(o.shipDisc)}</span>`:""}</td><td>${baht(o.shipFee)}</td></tr>
       <tr><td><b>รวม</b></td><td><b>${baht(orderTotal(o))}</b></td></tr></table>
     <h3>ลูกค้า</h3>
-    <div class="kv"><span>ชื่อ</span><b>${esc(o.customer)||"–"}</b><span>เบอร์</span><b>${o.phone?`<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`:"–"}</b><span>IG</span><b>${esc(o.ig)||"–"}</b></div>
+    <div class="kv"><span>ชื่อ</span><b>${esc(o.customer)||"–"}${isMember(o.phone)?` <span class="pill p-green">สมาชิก</span>`:""}</b><span>เบอร์</span><b>${o.phone?`<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`:"–"}</b><span>IG</span><b>${esc(o.ig)||"–"}</b></div>
     <h3>ที่อยู่จัดส่ง</h3><p class="note" style="white-space:pre-wrap;color:var(--ink)">${esc(o.address)||"–"}</p>
     <h3>เลขพัสดุ</h3>
     <div class="track"><input type="text" id="trk-sheet" value="${esc(o.tracking)}" placeholder="ใส่เลขพัสดุ" autocapitalize="characters"><button class="mini go" data-act="saveTrack" data-id="${esc(o.id)}" data-src="trk-sheet">บันทึก</button></div>
@@ -765,6 +766,161 @@ function vSummary(){
         <p class="note" style="padding-bottom:6px">ต้นทุนของที่ขาย ${baht(p.cogs)}${p.miss?` · ⚠️ ${p.miss} รายการไม่มีต้นทุน`:""}</p></div>`:""}</div>`; }).join("") : `<div class="card empty">ยังไม่มีข้อมูล</div>`}`;
 }
 
+/* ---------------- 8) คูปอง & สมาชิก ---------------- */
+const phoneKey = p => { let s = String(p||"").replace(/\D/g,""); if(s.indexOf("66")===0 && s.length===11) s = "0"+s.slice(2); return s; };
+function couponUses(code){
+  const list = DATA.orders.filter(o=>o.coupon===code && o.status!=="ยกเลิก");
+  return { total:list.length, list };
+}
+function memberOrders(m){ return DATA.orders.filter(o=>phoneKey(o.phone)===m.phone).sort((a,b)=>sortDesc(a,b)); }
+function memberStats(m){
+  const R = DATA.promo.rules; let earned=0, used=0, pending=0, spent=0, n=0;
+  memberOrders(m).filter(o=>o.status && o.status!=="ยกเลิก").forEach(o=>{
+    n++; used += o.pointsUsed;
+    const pts = (o.date||"") >= (m.joined||"") && R.perPoint>0 ? Math.floor(Math.max(0, orderSub(o) - o.discount) / R.perPoint) : 0;
+    if(isPaid(o)){ earned += pts; spent += orderTotal(o); } else pending += pts; });
+  return { earned, used, pending, spent:r2(spent), orders:n, balance:Math.max(0, earned - used) };
+}
+const pendingAddrs = () => (DATA.promo && DATA.promo.addrs || []).filter(a=>a.status==="รออนุมัติ");
+const memberOf = phone => DATA.promo.members.find(m=>m.phone===phoneKey(phone));
+const addrCard = a => { const m = memberOf(a.phone);
+  return `<div class="row" style="display:block"><div class="t">${esc(m?m.name:a.phone)} <span class="note">${esc(a.phone)}</span></div>
+    <div class="d" style="white-space:pre-wrap;color:var(--ink)">📦 ${esc(a.name)} · ${esc(a.address)}</div>
+    <div class="d">ขอเมื่อ ${dTH(a.date)}${a.order?` · จากออเดอร์ ${esc(a.order)}`:""}${m&&m.address?`<br>ที่อยู่หลักเดิม: ${esc(m.address)}`:""}</div>
+    <div class="btns"><button class="mini no" data-act="addrSet" data-row="${a.row}" data-phone="${esc(a.phone)}" data-st="ไม่อนุมัติ">❌ ไม่อนุมัติ</button><button class="mini go" data-act="addrSet" data-row="${a.row}" data-phone="${esc(a.phone)}" data-st="อนุมัติ">✅ อนุมัติ</button></div></div>`; };
+const isMember = phone => !!(DATA.promo && DATA.promo.members.some(m=>m.phone===phoneKey(phone)));
+const cDesc = c => `${c.type} ${baht(c.amount)}${c.min?` · ซื้อครบ ${baht(c.min)}`:""}`;
+const TH_MS = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const bdTH = b => { const m = String(b||"").match(/^(\d{1,2})\/(\d{1,2})$/); return m ? `${Number(m[1])} ${TH_MS[Number(m[2])-1]||""}` : "–"; };
+function couponState(c){
+  const t = today(), u = couponUses(c.code);
+  if(!c.on) return ["p-grey","ปิดอยู่"];
+  if(c.end && c.end < t) return ["p-red","หมดอายุ"];
+  if(c.start && c.start > t) return ["p-amber","ยังไม่เริ่ม"];
+  if(c.limit && u.total >= c.limit) return ["p-amber","ใช้ครบแล้ว"];
+  return ["p-green","ใช้ได้"];
+}
+function vPromo(t){
+  t = t || "coupons";
+  const P = DATA.promo || {ready:false};
+  if(!P.ready) return bar("🎟️ คูปอง & สมาชิก") + `<section class="card"><h2>⚙️ ยังไม่ได้ตั้งค่า</h2><p class="note">วางโค้ด Code.gs เวอร์ชันใหม่ในไฟล์ Chifanlema-stock แล้วรัน <b>authorize</b> ระบบจะสร้างแท็บ Coupons / Members / ShipDiscount / Settings ให้ จากนั้นกด 🔄 โหลดข้อมูลใหม่ที่หน้าแรก</p></section>`;
+  let body = "";
+  if(t==="coupons"){
+    const list = P.coupons.slice().sort((a,b)=>(b.on-a.on) || a.code.localeCompare(b.code));
+    body = `<button class="btn" style="margin:0 0 14px" data-act="cfNew">+ สร้างคูปอง</button>
+      <section class="card">${list.length ? list.map(c=>{ const u=couponUses(c.code), st=couponState(c);
+        return `<div class="row tap" data-act="cfEdit" data-row="${c.row}"><div><div class="t"><span class="code">${esc(c.code)}</span>
+          <span class="pill ${st[0]}">${st[1]}</span>${c.members?`<span class="pill p-sky">เฉพาะสมาชิก</span>`:""}</div>
+          <div class="d">${esc(cDesc(c))}${c.start?` · เริ่ม ${dTH(c.start)}`:""}${c.end?` · ถึง ${dTH(c.end)}`:""}${c.perPerson?` · คนละ ${c.perPerson} ครั้ง`:""}</div></div>
+          <div class="a">${u.total}${c.limit?"/"+c.limit:""}<br><span class="note">ครั้ง</span></div></div>`; }).join("") : `<div class="empty">ยังไม่มีคูปอง</div>`}</section>
+      <p class="note">ลูกค้าใส่โค้ดในหน้าร้านตอนสั่งซื้อ ระบบเช็กเงื่อนไขและหักให้เอง · นับการใช้เฉพาะออเดอร์ที่ไม่ยกเลิก</p>`;
+  }
+  if(t==="members"){
+    const q = (UI.q.mem||"").toLowerCase();
+    let list = P.members.map(m=>({m, s:memberStats(m)}));
+    if(q) list = list.filter(x=>[x.m.name,x.m.phone,x.m.ig].join(" ").toLowerCase().includes(q));
+    list.sort((a,b)=>b.s.spent-a.s.spent);
+    const mm = today().slice(5,7), bdays = P.members.filter(m=>(m.birthday.split("/")[1]||"").padStart(2,"0")===mm);
+    const pend = pendingAddrs();
+    body = (pend.length ? `<section class="card"><h2>📌 ที่อยู่ใหม่รออนุมัติ (${pend.length})</h2><p class="note">ลูกค้าขอบันทึกที่อยู่เพิ่มตอนสั่งซื้อ — ดูชื่อผู้รับ/ที่อยู่ให้สมเหตุสมผลแล้วกดอนุมัติ ครั้งหน้าลูกค้าจะเลือกที่อยู่นี้และใช้แต้มได้</p>${pend.map(addrCard).join("")}</section>` : "")
+      + `<button class="btn ghost" style="margin:0 0 12px" data-act="mfNew">+ เพิ่มสมาชิก (ลูกค้าจากแชท/หน้าร้าน)</button>
+      ${bdays.length?`<div class="ok">🎂 เกิดเดือนนี้ ${bdays.length} คน: ${bdays.map(m=>esc(m.name)).join(", ")}</div>`:""}
+      <input type="search" class="search mt" placeholder="🔍 ค้นหา ชื่อ / เบอร์ / IG" value="${esc(UI.q.mem||"")}" data-q="mem">
+      <section class="card">${list.length ? list.map(({m,s})=>`<div class="row tap" data-act="mfEdit" data-row="${m.row}"><div><div class="t">${esc(m.name)}</div>
+        <div class="d">${pendingAddrs().some(a=>a.phone===m.phone)?`<span class="pill p-amber">ที่อยู่รออนุมัติ</span> `:""}${esc(m.phone)}${m.ig?" · "+esc(m.ig):""} · ${s.orders} ออเดอร์ · ซื้อแล้ว ${baht(s.spent)}${m.birthday?` · 🎂 ${bdTH(m.birthday)}`:""}</div></div><div class="a">${s.balance}<br><span class="note">แต้ม</span></div></div>`).join("")
+        : `<div class="empty">ยังไม่มีสมาชิก — ลูกค้าสมัครได้ตอนสั่งซื้อในหน้าร้าน</div>`}</section>`;
+  }
+  if(t==="rules"){
+    const R = P.rules;
+    if(!RU) RU = {tiers:P.tiers.map(x=>({...x}))};
+    body = `<section class="card"><h2>🚚 ส่วนลดค่าส่งอัตโนมัติ</h2><p class="note">ทุกคนได้ ไม่ต้องเป็นสมาชิก · นับจากค่าสินค้าหลังหักโปร · ลดไม่เกินค่าส่งจริง</p>
+      ${RU.tiers.map((x,i)=>`<div class="g3" style="align-items:end"><div><label>ซื้อครบ (฿)</label><input type="text" inputmode="numeric" value="${esc(x.min)}" data-ru="${i}:min"></div>
+        <div><label>ลดค่าส่ง (฿)</label><input type="text" inputmode="numeric" value="${esc(x.off)}" data-ru="${i}:off"></div>
+        <div><button class="btn danger" style="margin:0" data-act="ruDel" data-i="${i}">ลบขั้นนี้</button></div></div>`).join("")}
+      <button class="btn ghost" data-act="ruAdd">+ เพิ่มขั้น</button></section>
+      <section class="card"><h2>⭐ แต้มสมาชิก</h2>
+      <div class="g3"><div><label>ซื้อกี่บาท = 1 แต้ม</label><input type="text" inputmode="numeric" id="ruPer" value="${R.perPoint}"></div>
+      <div><label>แลกครั้งละกี่แต้ม</label><input type="text" inputmode="numeric" id="ruStep" value="${R.step}"></div>
+      <div><label>ได้ส่วนลด (฿)</label><input type="text" inputmode="numeric" id="ruValue" value="${R.value}"></div></div>
+      <div class="ok" style="background:var(--sky-soft);color:var(--ink)">ตอนนี้: ซื้อ ${baht(R.perPoint)} ได้ 1 แต้ม · ใช้ ${R.step} แต้ม ลด ${baht(R.value)}<br>= คืนให้ลูกค้าประมาณ <b>${R.perPoint&&R.step?r2(R.value/(R.step*R.perPoint)*100):0}%</b> ของยอดซื้อ</div>
+      <h3>🎂 ส่วนลดวันเกิด</h3>
+      <div class="g2"><div><label>ส่วนลด (฿) <span class="opt">0 = ปิด</span></label><input type="text" inputmode="numeric" id="ruBday" value="${R.bday}"></div>
+      <div><label>ซื้อขั้นต่ำ (฿)</label><input type="text" inputmode="numeric" id="ruBdayMin" value="${R.bdayMin}"></div></div>
+      <p class="note mt">แต้มนับจากค่าสินค้าที่จ่ายจริง (หลังหักส่วนลด ไม่รวมค่าส่ง) ของออเดอร์หลังวันสมัคร และได้เมื่อเป็น "ชำระแล้ว / จัดส่งแล้ว" · ใช้แต้ม/สิทธิ์วันเกิดได้เมื่อส่งไปที่อยู่สมาชิกเท่านั้น (กันคนอื่นแอบใช้เบอร์) · สิทธิ์วันเกิดใช้ได้ปีละครั้ง และต้องสมัครก่อนเดือนเกิด</p></section>
+      <button class="btn" data-act="ruSave">บันทึกการตั้งค่า</button>`;
+  }
+  return bar("🎟️ คูปอง & สมาชิก") + tabs("promo", t, [["coupons","คูปอง"],["members","สมาชิก"],["rules","ส่วนลด & แต้ม"]]) + body;
+}
+let CF = null;
+function cfNew(){ CF = {row:null, code:"", type:"ลดค่าส่ง", amount:"", min:"", start:"", end:"", limit:"", perPerson:"1", members:false, on:true, note:""}; drawCF("สร้างคูปอง"); }
+function cfEdit(row){ const c = DATA.promo.coupons.find(x=>x.row===Number(row)); if(!c) return;
+  CF = {row:c.row, code:c.code, type:c.type, amount:c.amount, min:c.min||"", start:c.start, end:c.end, limit:c.limit||"", perPerson:c.perPerson||"", members:c.members, on:c.on, note:c.note};
+  drawCF(`คูปอง ${c.code}`); }
+function drawCF(title){
+  const u = CF.row ? couponUses(CF.code) : null;
+  const chip = (k,v,l) => `<button class="chip ${String(CF[k])===String(v)?"on":""}" data-act="cfSet" data-k="${k}" data-v="${v}">${l}</button>`;
+  openSheet(title, `
+    <label>โค้ด <span class="opt">(ตัวอังกฤษ/ตัวเลข 3–20 ตัว)</span></label><input type="text" value="${esc(CF.code)}" data-cf="code" placeholder="เช่น SHIP30" autocapitalize="characters" style="text-transform:uppercase">
+    <label>ลดอะไร</label><div class="chips">${chip("type","ลดค่าส่ง","🚚 ลดค่าส่ง")}${chip("type","ลดราคาสินค้า","🛍️ ลดราคาสินค้า")}</div>
+    <div class="g2"><div><label>ลด (บาท)</label><input type="text" inputmode="decimal" value="${esc(CF.amount)}" data-cf="amount"></div>
+      <div><label>ซื้อสินค้าขั้นต่ำ (บาท) <span class="opt">ไม่ใส่ = ไม่มี</span></label><input type="text" inputmode="decimal" value="${esc(CF.min)}" data-cf="min"></div></div>
+    ${CF.type==="ลดค่าส่ง"?`<p class="note">ลดค่าส่งเพิ่มจากส่วนลดค่าส่งอัตโนมัติ แต่รวมแล้วไม่เกินค่าส่งจริง</p>`:""}
+    <div class="g2"><div><label>เริ่มใช้ <span class="opt">ไม่ใส่ = ทันที</span></label><input type="date" value="${esc(CF.start)}" data-cf="start"></div>
+      <div><label>ใช้ได้ถึง <span class="opt">ไม่ใส่ = ไม่หมดอายุ</span></label><input type="date" value="${esc(CF.end)}" data-cf="end"></div></div>
+    <div class="g2"><div><label>สิทธิ์ทั้งหมด</label><input type="text" inputmode="numeric" value="${esc(CF.limit)}" data-cf="limit" placeholder="ไม่จำกัด"></div>
+      <div><label>ใช้ได้ต่อคน (ต่อเบอร์)</label><input type="text" inputmode="numeric" value="${esc(CF.perPerson)}" data-cf="perPerson" placeholder="ไม่จำกัด"></div></div>
+    <label>ใครใช้ได้</label><div class="chips">${chip("members",false,"ทุกคน")}${chip("members",true,"เฉพาะสมาชิก")}</div>
+    <label>สถานะ</label><div class="chips">${chip("on",true,"เปิดใช้")}${chip("on",false,"ปิด")}</div>
+    <label>หมายเหตุ <span class="opt">(เห็นเฉพาะร้าน)</span></label><input type="text" value="${esc(CF.note)}" data-cf="note" placeholder="เช่น แจกในสตอรี่ IG">
+    ${u?`<div class="ok" style="background:var(--sky-soft);color:var(--ink)">ใช้ไปแล้ว ${u.total} ครั้ง${u.list.length?`: ${u.list.slice(0,10).map(o=>esc(o.id)).join(", ")}${u.list.length>10?" …":""}`:""}</div>`:""}
+    <button class="btn" data-act="cfSave">บันทึกคูปอง</button>`);
+}
+async function cfSave(){
+  const b = {row:CF.row, code:String(CF.code).trim().toUpperCase(), type:CF.type, amount:num(CF.amount), min:num(CF.min), start:CF.start, end:CF.end,
+             limit:num(CF.limit), perPerson:CF.perPerson===""?0:num(CF.perPerson), members:!!CF.members, on:!!CF.on, note:CF.note};
+  if(!/^[A-Z0-9_-]{3,20}$/.test(b.code)) return toast("โค้ดใช้ได้แค่ตัวอังกฤษ/ตัวเลข 3–20 ตัว");
+  if(!(b.amount>0)) return toast("ใส่จำนวนที่ลดก่อนนะคะ");
+  if(b.start && b.end && b.end < b.start) return toast("วันหมดอายุต้องหลังวันเริ่ม");
+  const r = await act("coupon_save", b, `✅ บันทึกคูปอง ${b.code} แล้ว`);
+  if(r.ok){ CF=null; closeSheet(); render(); }
+}
+let MF = null;
+function mfNew(){ MF = {row:null, phone:"", name:"", ig:"", address:"", bdD:"", bdM:"", note:""}; drawMF("เพิ่มสมาชิก", null); }
+function mfEdit(row){ const m = DATA.promo.members.find(x=>x.row===Number(row)); if(!m) return;
+  const b = String(m.birthday||"").split("/");
+  MF = {row:m.row, phone:m.phone, name:m.name, ig:m.ig, address:m.address, bdD:b[0]?String(Number(b[0])):"", bdM:b[1]?String(Number(b[1])):"", note:m.note};
+  drawMF(m.name, m); }
+function drawMF(title, m){
+  const s = m ? memberStats(m) : null, orders = m ? memberOrders(m) : [];
+  openSheet(title, `${s?`<div class="ok">⭐ แต้มคงเหลือ <b>${s.balance}</b> (ได้ ${s.earned} · ใช้ ${s.used}${s.pending?` · รอยืนยัน +${s.pending}`:""})<br>
+    ${s.orders} ออเดอร์ · ซื้อแล้ว ${baht(s.spent)} · สมัคร ${dTH(m.joined)}</div>`:`<p class="note">สมาชิกที่เพิ่มที่นี่ สั่งในหน้าร้านด้วยเบอร์นี้แล้วได้แต้ม/ใช้ที่อยู่นี้ได้เลย</p>`}
+    <div class="g2"><div><label>ชื่อ</label><input type="text" value="${esc(MF.name)}" data-mf="name"></div><div><label>เบอร์โทร</label><input type="tel" value="${esc(MF.phone)}" data-mf="phone" ${m?"readonly":""}></div></div>
+    <label>IG</label><input type="text" value="${esc(MF.ig)}" data-mf="ig">
+    <label>ที่อยู่จัดส่ง <span class="opt">(ใช้กรอกให้อัตโนมัติตอนสั่ง)</span></label><textarea data-mf="address">${esc(MF.address)}</textarea>
+    ${m ? (()=>{ const extra = (DATA.promo.addrs||[]).filter(a=>a.phone===m.phone && a.status!=="ไม่อนุมัติ");
+      return extra.length ? `<h3>📦 ที่อยู่เพิ่ม (${extra.length})</h3>` + extra.map(a=>`<div class="row" style="display:block"><div class="d" style="color:var(--ink);white-space:pre-wrap">${a.status==="รออนุมัติ"?`<span class="pill p-amber">รออนุมัติ</span> `:`<span class="pill p-green">อนุมัติแล้ว</span> `}${esc(a.name)} · ${esc(a.address)}</div>
+        <div class="btns">${a.status==="รออนุมัติ"?`<button class="mini go" data-act="addrSet" data-row="${a.row}" data-phone="${esc(a.phone)}" data-st="อนุมัติ">✅ อนุมัติ</button>`:""}<button class="mini no" data-act="addrSet" data-row="${a.row}" data-phone="${esc(a.phone)}" data-st="ลบ">🗑️ ลบที่อยู่นี้</button></div></div>`).join("") : ""; })() : ""}
+    <label>วันเกิด <span class="opt">(ไม่บังคับ)</span></label><div class="g2"><select data-mf="bdD"><option value="">วัน</option>${Array.from({length:31},(_,i)=>`<option ${String(i+1)===MF.bdD?"selected":""}>${i+1}</option>`).join("")}</select>
+      <select data-mf="bdM"><option value="">เดือน</option>${TH_MS.map((n,i)=>`<option value="${i+1}" ${String(i+1)===MF.bdM?"selected":""}>${n}</option>`).join("")}</select></div>
+    <label>หมายเหตุ</label><input type="text" value="${esc(MF.note)}" data-mf="note">
+    <button class="btn" data-act="mfSave">บันทึก</button>
+    ${m?`<h3>ออเดอร์ของสมาชิก</h3>${orders.length ? orders.map(orderRow).join("") : `<div class="empty">ยังไม่มี</div>`}`:""}`);
+}
+async function mfSave(){
+  if(phoneKey(MF.phone).length < 9) return toast("ใส่เบอร์โทรให้ถูกต้อง");
+  if(!MF.name.trim()) return toast("ใส่ชื่อก่อนนะคะ");
+  const r = await act("member_save", {row:MF.row, phone:phoneKey(MF.phone), name:MF.name.trim(), ig:MF.ig.trim(), address:MF.address.trim(), note:MF.note.trim(),
+    birthday: MF.bdD && MF.bdM ? MF.bdD + "/" + MF.bdM : ""}, "✅ บันทึกสมาชิกแล้ว");
+  if(r.ok){ MF=null; closeSheet(); render(); }
+}
+let RU = null;
+async function ruSave(){
+  const b = {perPoint:num($("#ruPer").value), step:num($("#ruStep").value), value:num($("#ruValue").value), bday:num($("#ruBday").value), bdayMin:num($("#ruBdayMin").value),
+             tiers:RU.tiers.map(x=>({min:num(x.min), off:num(x.off)})).filter(x=>x.min>0 && x.off>0)};
+  if(!(b.perPoint>0 && b.step>0)) return toast(ERR.input);
+  const r = await act("settings_save", b, "✅ บันทึกการตั้งค่าแล้ว"); if(r.ok){ RU=null; render(); }
+}
+
 /* ---------------- sheet / toast / busy ---------------- */
 function openSheet(title, html){ $("#sheetTitle").textContent = title; $("#sheetBody").innerHTML = html; $("#sheet").classList.remove("hide"); document.body.style.overflow="hidden"; $("#sheet .box").scrollTop = 0; }
 function closeSheet(){ $("#sheet").classList.add("hide"); $("#sheetBody").innerHTML = ""; document.body.style.overflow=""; }
@@ -827,7 +983,15 @@ const H = {
   kfNew, kfEdit(el){ kfEdit(el.dataset.row); },
   kfSet(el){ KF[el.dataset.k] = el.dataset.v; drawKF($("#sheetTitle").textContent); },
   kfSave,
-  rfNew, rfEdit(el){ rfEdit(el.dataset.row); }, rfSave
+  rfNew, rfEdit(el){ rfEdit(el.dataset.row); }, rfSave,
+  cfNew, cfEdit(el){ cfEdit(el.dataset.row); }, cfSave,
+  cfSet(el){ const k=el.dataset.k, v=el.dataset.v; CF[k] = v==="true" ? true : v==="false" ? false : v; drawCF($("#sheetTitle").textContent); },
+  mfNew, mfEdit(el){ mfEdit(el.dataset.row); }, mfSave, ruSave,
+  async addrSet(el){ const st = el.dataset.st; if(st!=="อนุมัติ" && !confirmTap(el)) return;
+    const inSheet = !$("#sheet").classList.contains("hide") && MF && MF.row;
+    const r = await act("addr_set", {row:Number(el.dataset.row), phone:el.dataset.phone, status:st}, st==="อนุมัติ"?"✅ อนุมัติที่อยู่แล้ว":st==="ลบ"?"🗑️ ลบที่อยู่แล้ว":"ไม่อนุมัติที่อยู่นี้แล้ว");
+    if(r.ok){ render(); if(inSheet) mfEdit(MF.row); } },
+  ruAdd(){ RU.tiers.push({min:"", off:""}); render(); }, ruDel(el){ RU.tiers.splice(Number(el.dataset.i),1); render(); }
 };
 function confirmTap(el, msg){
   if(el.dataset.armed) return true;
@@ -853,6 +1017,9 @@ document.addEventListener("input", e=>{
   if(d.kf){ if(d.kf==="pick"){ KF.isNew = t.value==="__new"; const p = DATA.cost.packs.filter(x=>x.code===t.value).pop(); KF.code = KF.isNew?"":t.value; if(p){ KF.name=p.name; KF.brand=p.brand; KF.unit=p.unit; KF.cur=p.cur; } drawKF($("#sheetTitle").textContent); return; }
     KF[d.kf] = t.value; if(d.redraw) drawKF($("#sheetTitle").textContent); return; }
   if(d.rf){ RF[d.rf] = t.value; return; }
+  if(d.cf){ CF[d.cf] = t.value; return; }
+  if(d.mf){ MF[d.mf] = t.value; return; }
+  if(d.ru){ const [i,k] = d.ru.split(":"); RU.tiers[i][k] = t.value; return; }
 });
 document.addEventListener("change", async e=>{
   const t = e.target;
@@ -869,12 +1036,13 @@ function demoData(){
   const stock = P.map((p,i)=>({row:i+2, code:p[0], th:p[1], cn:p[2], brand:p[3], price:p[4], weight:p[5], inn:inn[p[0]], sold:0, left:0, alert:3, status:"", cat:p[6], unit:p[7], img:p[0]+".jpg", promo:"", show:"ใช่"}));
   const names = P.map((p,i)=>({row:i+2, no:i+1, code:p[0], cn:p[2], brand:p[3], th:p[1]})).concat([{row:8,no:7,code:"CHA01",cn:"红茶",brand:"ตัวอย่าง",th:"ใบชาดำ (ตัวอย่าง)"}]);
   const m = (d,id,ch,cus,items,o={}) => ({id, date:d, channel:ch, customer:cus, phone:o.phone||"", ig:o.ig||"", address:o.address||"", note:"", shipMethod:o.sm||"", shipFee:o.sf||0, discount:o.disc||0, tracking:o.tr||"", slip:!!o.slip, total:0, status:o.st,
+    coupon:o.coupon||"", shipDisc:o.sd||0, pointsUsed:o.pu||0,
     items:items.map(([c,q,pr],k)=>({row:0, code:c, name:P.find(p=>p[0]===c)[1], qty:q, price:pr, sub:q*pr, status:o.st}))});
   const orders = [
     m("2026-09-12","CHAT-0001","แชท IG","คุณเอ (ตัวอย่าง)",[["MAT01",2,169]],{sm:"ลงทะเบียน",sf:30,st:"จัดส่งแล้ว",tr:"EX000000001TH"}),
     m("2026-09-20","ONSITE-0001","หน้าร้าน","ลูกค้าหน้าร้าน",[["SNA15",4,99]],{st:"ชำระแล้ว"}),
     m("2026-10-05","CHAT-0002","แชท IG","คุณบี (ตัวอย่าง)",[["SNA16",1,69],["SNA17",2,69]],{sm:"EMS",sf:50,disc:7,st:"จัดส่งแล้ว",tr:"EX000000002TH"}),
-    m("2026-10-14","CF261014-DEMO","ลิงก์","คุณซี (ตัวอย่าง)",[["SNA07",1,169]],{sm:"ลงทะเบียน",sf:30,st:"ชำระแล้ว",phone:"0800000000",address:"ที่อยู่ตัวอย่าง กรุงเทพฯ",slip:true}),
+    m("2026-10-14","CF261014-DEMO","ลิงก์","คุณซี (ตัวอย่าง)",[["SNA07",1,169]],{sm:"ลงทะเบียน",sf:10,st:"ชำระแล้ว",phone:"0800000000",address:"ที่อยู่ตัวอย่าง กรุงเทพฯ",slip:true,coupon:"SHIP30",sd:20}),
     m("2026-10-16","CF261016-DEM2","ลิงก์","คุณดี (ตัวอย่าง)",[["MAT01",1,169]],{sm:"EMS",sf:50,st:"รอตรวจสลิป",slip:true}),
     m("2026-10-16","CF261016-DEM3","ลิงก์","คุณอี (ตัวอย่าง)",[["SNA01",2,69]],{sm:"ลงทะเบียน",sf:30,st:"รอโอน"})];
   orders.forEach(o=>o.total = o.items.reduce((a,i)=>a+i.sub,0)-o.discount+o.shipFee);
@@ -890,7 +1058,13 @@ function demoData(){
   const D = {today:today(), orders, stock, cost:{names, lots, sells, packs, rates}, tx,
     categories:{income:["ขายนอกระบบ (ตลาดนัด/หน้าร้าน)","เงินลงทุนเพิ่ม","รายรับอื่น ๆ"], expense:["ซื้อสินค้า (ต้นทุน)","ค่าขนส่งจีน→ไทย","ค่าส่งของให้ลูกค้า","บรรจุภัณฑ์","การตลาด/โฆษณา","อุปกรณ์/เครื่องมือ","ค่าธรรมเนียม/ค่าโอน","รายจ่ายอื่น ๆ"], pay:["โอน/พร้อมเพย์","เงินสด","บัตรเครดิต","Alipay/WeChat","อื่น ๆ"]},
     channels:["แชท IG","แชทอื่น","หน้าร้าน","อื่นๆ"], shipMethods:["ลงทะเบียน","EMS","นัดรับ"], statuses:["รอโอน","รอตรวจสลิป","ชำระแล้ว","จัดส่งแล้ว","ยกเลิก"], paid:["ชำระแล้ว","ชำระเงินแล้ว","จัดส่งแล้ว"],
-    cats:{goods:"ซื้อสินค้า (ต้นทุน)", inbound:"ค่าขนส่งจีน→ไทย", pack:"บรรจุภัณฑ์"}};
+    cats:{goods:"ซื้อสินค้า (ต้นทุน)", inbound:"ค่าขนส่งจีน→ไทย", pack:"บรรจุภัณฑ์"},
+    promo:{ready:true, rules:{perPoint:100, step:10, value:20, bday:50, bdayMin:0},
+      tiers:[[299,20],[399,25],[499,30],[599,35],[699,40],[799,45],[899,50],[999,55],[1099,60]].map(([min,off])=>({min,off})),
+      coupons:[{row:2, code:"SHIP30", type:"ลดค่าส่ง", amount:30, min:300, start:"", end:"2026-11-30", limit:50, perPerson:1, members:false, on:true, note:"แจกในสตอรี่"},
+               {row:3, code:"WELCOME50", type:"ลดราคาสินค้า", amount:50, min:0, start:"", end:"", limit:0, perPerson:1, members:true, on:true, note:"สมาชิกใหม่"}],
+      addrs:[{row:2, phone:"0800000000", name:"คุณซี (ที่ทำงาน)", address:"อาคารตัวอย่าง ชั้น 5 สีลม กรุงเทพฯ 10500", status:"รออนุมัติ", date:"2026-10-29", order:"CF261029-DEMO"}],
+      members:[{row:2, phone:"0800000000", name:"คุณซี (ตัวอย่าง)", ig:"@democ", address:"ที่อยู่ตัวอย่าง กรุงเทพฯ", birthday:"05/"+today().slice(5,7), joined:"2026-10-10", note:""}]}};
   return demoRecalc(D);
 }
 function demoRecalc(D){
@@ -957,6 +1131,14 @@ function demoApi(action, b){
     case "pack_add": { const lot = 1+Math.max(0,...D.cost.packs.filter(p=>p.code===b.code).map(p=>p.lot));
       D.cost.packs.push({row:D.cost.packs.length+2, name:b.name, brand:b.brand, code:b.code, lot, lotCode:b.code+"-"+lot, date:b.date, amount:b.amount, unit:b.unit, yuan:b.cur==="CNY"?b.price:null, baht:b.cur==="THB"?b.price:0, cur:b.cur, shipCN:b.shipCN, shipTH:b.shipTH, shipOther:b.shipOther}); break; }
     case "pack_edit": Object.assign(D.cost.packs.find(p=>p.row===b.row), {name:b.name, brand:b.brand, date:b.date, amount:b.amount, unit:b.unit, cur:b.cur, yuan:b.cur==="CNY"?b.price:null, baht:b.cur==="THB"?b.price:0, shipCN:b.shipCN, shipTH:b.shipTH, shipOther:b.shipOther}); break;
+    case "coupon_save": { const P = D.promo; const ex = P.coupons.find(c=>c.code===b.code && c.row!==b.row); if(ex) return {ok:false, reason:"exists"};
+      const c = b.row ? P.coupons.find(x=>x.row===b.row) : (P.coupons.push({row:P.coupons.length+2}), P.coupons[P.coupons.length-1]);
+      Object.assign(c, {code:b.code, type:b.type, amount:b.amount, min:b.min, start:b.start, end:b.end, limit:b.limit, perPerson:b.perPerson, members:b.members, on:b.on, note:b.note}); break; }
+    case "member_save": { const P = D.promo; if(P.members.some(x=>x.phone===b.phone && x.row!==b.row)) return {ok:false, reason:"exists"};
+      const m = b.row ? P.members.find(x=>x.row===b.row) : (P.members.push({row:P.members.length+2, joined:today()}), P.members[P.members.length-1]);
+      Object.assign(m, {phone:b.phone, name:b.name, ig:b.ig, address:b.address, birthday:b.birthday, note:b.note}); break; }
+    case "addr_set": { const P = D.promo; if(b.status==="ลบ") P.addrs = P.addrs.filter(a=>a.row!==b.row); else P.addrs.find(a=>a.row===b.row).status = b.status; break; }
+    case "settings_save": D.promo.rules = {perPoint:b.perPoint, step:b.step, value:b.value, bday:b.bday, bdayMin:b.bdayMin}; D.promo.tiers = b.tiers; break;
     case "rate_add": if(D.cost.rates.some(r=>r.date===b.date)) return {ok:false, reason:"exists"}; D.cost.rates.push({row:D.cost.rates.length+2, date:b.date, rate:b.rate, plan:null}); break;
     case "rate_edit": { const r = D.cost.rates.find(x=>x.row===b.row); if(b.date!==b.oldDate && (D.cost.lots.some(l=>l.date===b.oldDate)||D.cost.packs.some(p=>p.date===b.oldDate))) return {ok:false, reason:"inuse"}; r.date=b.date; r.rate=b.rate; break; }
   }
