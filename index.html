@@ -433,7 +433,7 @@ function renderList(){
     }).join("");
   $("#list").querySelectorAll(".qty button").forEach(b=>b.onclick=()=>{
     const k=b.dataset.k, n=Math.min((cart[k]||0)+Number(b.dataset.d), leftOf(k));
-    if(n<=0) delete cart[k]; else cart[k]=n;
+    if(n<=0) delete cart[k]; else { cart[k]=n; if(Number(b.dataset.d)>0) track("cart"); }
     renderList(); renderBar();
   });
   $("#list").querySelectorAll(".thumb[data-code]").forEach(t=>t.onclick=()=>{
@@ -843,8 +843,17 @@ async function placeOrder(){
   return d;
 }
 
+/* ---------- สถิติ (นับจำนวนครั้ง ไม่เก็บข้อมูลส่วนตัว · นับ 1 ครั้งต่อคนต่อวัน) ---------- */
+function track(ev){
+  if(!CONFIG.sheetsUrl) return;
+  const key = "trk_" + ev + "_" + new Date().toISOString().slice(0,10);
+  try{ if(sessionStorage.getItem(key) || localStorage.getItem(key)) return; sessionStorage.setItem(key,"1"); localStorage.setItem(key,"1"); }catch(e){}
+  const ig = /Instagram/i.test(navigator.userAgent) || /instagram\./i.test(document.referrer);
+  try{ fetch(CONFIG.sheetsUrl,{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"track", ev, ig})}).catch(()=>{}); }catch(e){}
+}
+
 /* ---------- utils ---------- */
-function openCheckout(){ order = { customer: order.customer }; step1(); $("#sheet").classList.add("open"); }
+function openCheckout(){ track("checkout"); order = { customer: order.customer }; step1(); $("#sheet").classList.add("open"); }
 function resetAfterOrder(){ for(const k in cart) delete cart[k]; order = { customer: order.customer }; renderList(); renderBar(); }
 function closeSheet(){ $("#sheet").classList.remove("open"); if(order.placed) resetAfterOrder(); }
 function copy(t){
@@ -856,7 +865,7 @@ function toast(m){ const t=$("#toast"); t.textContent=m; t.style.display="block"
 $("#checkoutBtn").onclick = openCheckout;
 $("#sheet").onclick = e=>{ if(e.target.id==="sheet") closeSheet(); };
 $("#zoom").onclick = ()=>$("#zoom").classList.remove("open");
-renderTabs(); renderList(); renderBar(); loadStock();
+renderTabs(); renderList(); renderBar(); loadStock(); track("view");
 </script>
 </body>
 </html>
