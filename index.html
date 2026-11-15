@@ -571,7 +571,9 @@ function step2(){
         ${!order.useSaved ? (m.canSave ? `<label class="chk" style="margin-left:26px"><input type="checkbox" id="saveAddrChk" ${order.saveAddr?"checked":""}><span>📌 บันทึกเป็นที่อยู่ของฉัน <small>ร้านจะตรวจสอบก่อน แล้วครั้งหน้าเลือกที่อยู่นี้และใช้แต้มได้</small></span></label>`
           : `<div class="note" style="margin-left:26px">${m.pending?"มีที่อยู่ใหม่รอร้านตรวจสอบอยู่ · ":""}บันทึกที่อยู่ได้สูงสุด 3 ที่ — อยากเปลี่ยนที่อยู่ที่บันทึกไว้ ทักร้านได้เลย</div>`) : ""}
         ${order.useSaved && steps>0 ? `<div class="ptsrow">ใช้แต้ม: ${[0, ...Array.from({length:Math.min(steps,5)},(_,i)=>(i+1)*m.step)].map(p=>`<button type="button" class="chipb ${ (order.usePoints||0)===p?"on":""}" data-pts="${p}">${p?`${p} แต้ม −${baht(p/m.step*m.value)}`:"ไม่ใช้"}</button>`).join("")}</div>` : ""}
-        ${order.useSaved && m.bday ? `<label class="chk"><input type="checkbox" id="bdayChk" ${order.useBday&&!order.couponObj?"checked":""} ${order.couponObj?"disabled":""}><span>🎂 สุขสันต์เดือนเกิด! ใช้ส่วนลดวันเกิด ${baht(m.bday)}${m.bdayMin?` (ซื้อครบ ${baht(m.bdayMin)})`:""}${order.couponObj?" <small>(ใช้พร้อมโค้ดส่วนลดไม่ได้)</small>":""}</span></label>` : ""}
+        ${m.bday ? (order.useSaved ? `<label class="chk"><input type="checkbox" id="bdayChk" ${order.useBday&&!order.couponObj?"checked":""} ${order.couponObj?"disabled":""}><span>🎂 สุขสันต์เดือนเกิด! ใช้ส่วนลดวันเกิด ${baht(m.bday)}${m.bdayMin?` (ซื้อครบ ${baht(m.bdayMin)})`:""}${order.couponObj?" <small>(ใช้พร้อมโค้ดส่วนลดไม่ได้ — กด ยกเลิกโค้ด เพื่อใช้ส่วนลดวันเกิดแทน)</small>":""}${order.useBday&&!order.couponObj&&m.bdayMin&&quote().net<m.bdayMin?`<small class="warnt">ซื้อเพิ่มอีก ${baht(Math.ceil(m.bdayMin-quote().net))} เพื่อใช้ส่วนลดวันเกิด</small>`:""}</span></label>`
+            : `<div class="note" style="margin-top:8px">🎂 เดือนนี้เป็นเดือนเกิด! เลือก "ส่งไปที่อยู่สมาชิก" เพื่อใช้ส่วนลดวันเกิด ${baht(m.bday)}</div>`)
+          : m.bdayWhy==="used" ? `<div class="note" style="margin-top:8px">🎂 ใช้สิทธิ์ส่วนลดวันเกิดของปีนี้ไปแล้ว</div>` : ""}
       </div>`;
     } else if(m && !m.member){
       html = `<div class="memcard">
@@ -601,7 +603,7 @@ function step2(){
     const r = await api({action:"member", phone:ph});
     b.disabled = false; b.textContent = "เช็กสมาชิก";
     if(!r.ok){ toast("เช็กสมาชิกไม่ได้ ลองอีกครั้งค่ะ"); return; }
-    order.mem = r; order.memPhone = ph; order.usePoints = 0; order.useBday = false;
+    order.mem = r; order.memPhone = ph; order.usePoints = 0; order.useBday = !!(r.member && r.bday && !order.couponObj);
     order.useSaved = !!(r.member && r.hasAddress); order.addrId = order.useSaved ? addrList(r)[0].id : ""; order.saveAddr = false;
     save(); redraw();
   };
