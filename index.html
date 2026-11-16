@@ -330,10 +330,15 @@ function tierNow(net){ let off = 0, min = 0; TIERS.forEach(t => { if (net >= t.m
 function tierNext(net){ const cur = tierNow(net).off; return TIERS.find(t => net < t.min && t.off > cur) || null; }
 const REG_NAME = "ส่งลงทะเบียน (หรือเอกชน)";
 function methodName(m){ return m === "ems" ? "EMS" : REG_NAME; }
+/* สมัครสมาชิกพร้อมสั่ง + เลือกเดือนเกิดเป็นเดือนนี้ → ได้ส่วนลดวันเกิดในออเดอร์นี้เลย */
+function joinBdayOn(){
+  return !!(order.join && !(order.mem && order.mem.member) && LOYAL && LOYAL.bday > 0 && order.bdD && Number(order.bdM) === new Date().getMonth() + 1 && !order.couponObj);
+}
 function quote(){
   const m = order.mem && order.mem.member && order.useSaved ? order.mem : null;
+  const jb = joinBdayOn() ? { amount:LOYAL.bday, min:LOYAL.bdayMin||0 } : null;
   return priceOrder(lineObjs(), order.ship || 0, TIERS, order.couponObj || null,
-    m && order.useBday && !order.couponObj && m.bday ? { amount:m.bday, min:m.bdayMin } : null,
+    jb || (m && order.useBday && !order.couponObj && m.bday ? { amount:m.bday, min:m.bdayMin } : null),
     m && order.usePoints ? { use:order.usePoints, step:m.step, value:m.value, balance:m.points } : null);
 }
 
@@ -580,7 +585,9 @@ function step2(){
         <label class="chk"><input type="checkbox" id="joinChk" ${order.join?"checked":""}><span>⭐ <b>สมัครสมาชิกฟรี</b> ด้วยเบอร์นี้ — ทุก ${baht(LOYAL?LOYAL.perPoint:100)} ได้ 1 แต้ม · ${LOYAL?LOYAL.step:10} แต้ม = ส่วนลด ${baht(LOYAL?LOYAL.value:20)}${LOYAL&&LOYAL.bday?` · เดือนเกิดรับส่วนลด ${baht(LOYAL.bday)}${LOYAL.bdayMin?` (ซื้อครบ ${baht(LOYAL.bdayMin)})`:""}`:""}</span></label>
         ${order.join?`<div class="bdrow">วันเกิด <small>(ไม่บังคับ)</small>
           <select id="bdD"><option value="">วัน</option>${Array.from({length:31},(_,i)=>`<option ${order.bdD==i+1?"selected":""}>${i+1}</option>`).join("")}</select>
-          <select id="bdM"><option value="">เดือน</option>${["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."].map((n,i)=>`<option value="${i+1}" ${order.bdM==i+1?"selected":""}>${n}</option>`).join("")}</select></div>`:""}
+          <select id="bdM"><option value="">เดือน</option>${["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."].map((n,i)=>`<option value="${i+1}" ${order.bdM==i+1?"selected":""}>${n}</option>`).join("")}</select></div>
+          ${joinBdayOn() ? `<div class="okbox" style="margin-top:8px">🎂 สุขสันต์เดือนเกิด! ได้ส่วนลดวันเกิด ${baht(LOYAL.bday)} ในออเดอร์นี้เลย${LOYAL.bdayMin&&quote().net<LOYAL.bdayMin?` <small class="warnt">ซื้อเพิ่มอีก ${baht(Math.ceil(LOYAL.bdayMin-quote().net))} เพื่อใช้ส่วนลดวันเกิด</small>`:""}</div>`
+            : order.couponObj && order.bdD && Number(order.bdM) === new Date().getMonth()+1 && LOYAL && LOYAL.bday ? `<div class="note" style="margin-top:8px">🎂 เดือนนี้เดือนเกิด — ใช้พร้อมโค้ดส่วนลดไม่ได้ กด ยกเลิกโค้ด เพื่อใช้ส่วนลดวันเกิดแทน</div>` : ""}`:""}
       </div>`;
     } else if(live){
       html = `<div class="note">เคยสั่งและเป็นสมาชิกแล้ว? ใส่เบอร์แล้วกด <b>เช็กสมาชิก</b> — ใช้แต้ม/ที่อยู่เดิมได้เลย</div>`;
@@ -591,8 +598,8 @@ function step2(){
     $("#memBox").querySelectorAll("[data-pts]").forEach(b=>b.onclick=()=>{ order.usePoints = Number(b.dataset.pts); redraw(); });
     if($("#bdayChk")) $("#bdayChk").onchange = e=>{ order.useBday = e.target.checked; redraw(); };
     if($("#joinChk")) $("#joinChk").onchange = e=>{ order.join = e.target.checked; redraw(); };
-    if($("#bdD")) $("#bdD").onchange = e=>{ order.bdD = e.target.value; };
-    if($("#bdM")) $("#bdM").onchange = e=>{ order.bdM = e.target.value; };
+    if($("#bdD")) $("#bdD").onchange = e=>{ order.bdD = e.target.value; redraw(); };
+    if($("#bdM")) $("#bdM").onchange = e=>{ order.bdM = e.target.value; redraw(); };
     $("#sumBox").innerHTML = totalsHtml(quote(), false);
   };
   const checkMember = async ()=>{
@@ -835,7 +842,7 @@ async function placeOrder(){
   const d = await api({
     action:"order", id:order.id, name:c.name||"", phone:phoneDigits(c.phone), ig:c.ig||"", address:c.address||"", note:c.note||"",
     items: cartLines().map(l=>({code:l.p.code, qty:l.qty})), method: order.method,
-    coupon: order.couponObj ? order.couponObj.code : "", useSaved: saved, addrId: saved ? (order.addrId || "main") : "", saveAddr: !saved && !!order.saveAddr && !!(order.mem && order.mem.member), useBday: saved && !!order.useBday, points: saved ? (order.usePoints||0) : 0,
+    coupon: order.couponObj ? order.couponObj.code : "", useSaved: saved, addrId: saved ? (order.addrId || "main") : "", saveAddr: !saved && !!order.saveAddr && !!(order.mem && order.mem.member), useBday: saved ? !!order.useBday : joinBdayOn(), points: saved ? (order.usePoints||0) : 0,
     join: !!(order.join && !(order.mem && order.mem.member)), birthday: bd
   });
   if(d.ok){
